@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exec Summary Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-page: #EEF2F6;
+    --bg-deep: #0B2540;
+    --bg-deep-2: #123258;
+    --surface: #FFFFFF;
+    --surface-2: #F5F8FA;
+    --ink: #10243B;
+    --ink-soft: #51697F;
+    --ink-faint: #8398AB;
+    --on-deep: #DCE8F2;
+    --on-deep-soft: #8FA9C2;
+    --line: #DBE3EA;
+    --line-strong: #C0CDD9;
+    --shallow: #6FC3D9;
+    --mid: #2C6E8E;
+    --brass: #BD8A2E;
+    --brass-ink: #7A5A1C;
+    --brass-bg: #FBF2E1;
+    --good: #1F7A4D;
+    --good-bg: #E1F3EA;
+    --good-line: #B7E1CA;
+    --watch: #93650A;
+    --watch-bg: #FCEECB;
+    --watch-line: #F1D998;
+    --bad: #AA352A;
+    --bad-bg: #FBE6E3;
+    --bad-line: #F0C2BA;
+    --nodata: #7C8CA0;
+    --nodata-bg: #E9EEF2;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow-card: 0 1px 2px rgba(11,37,64,0.07), 0 6px 20px rgba(11,37,64,0.07);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button { font-family: inherit; }
+  :focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  /* ---------- header ---------- */
+  header.topbar {
+    position: relative;
+    background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
+    color: var(--on-deep);
+    overflow: hidden;
+  }
+  header.topbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.35;
+    background-image:
+      repeating-radial-gradient(circle at 12% 120%, transparent 0, transparent 38px, rgba(111,195,217,0.10) 39px, rgba(111,195,217,0.10) 40px),
+      repeating-radial-gradient(circle at 88% -40%, transparent 0, transparent 52px, rgba(189,138,46,0.09) 53px, rgba(189,138,46,0.09) 54px);
+    pointer-events: none;
+  }
+  .topbar-inner {
+    position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .mark {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .brand .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-deep-soft);
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .file-meta {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--on-deep-soft);
+    max-width: 360px;
+    text-align: right;
+  }
+
+  .btn {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-brass {
+    background: var(--brass);
+    color: #2A1E08;
+  }
+  .btn-brass:hover { background: #CB9938; }
+  .btn-ghost-dark {
+    background: rgba(255,255,255,0.06);
+    color: var(--on-deep);
+    border-color: rgba(220,232,242,0.25);
+  }
+  .btn-ghost-dark:hover { background: rgba(255,255,255,0.12); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line-strong);
+  }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  input[type=file] { display: none; }
+
+  /* ---------- dropzone (empty state) ---------- */
+  .dropzone {
+    max-width: 1400px;
+    margin: 28px auto;
+    padding: 0 22px;
+  }
+  .dropzone-card {
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 46px 24px;
+    text-align: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone-card.drag-over {
+    border-color: var(--brass);
+    background: var(--brass-bg);
+  }
+  .dropzone-card h2 {
+    font-family: var(--font-display);
+    font-size: 21px;
+    margin: 0 0 6px;
+  }
+  .dropzone-card p { color: var(--ink-soft); margin: 0 0 18px; font-size: 13.5px; }
+  .dropzone-card .privacy-note {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+  }
+
+  /* ---------- dashboard cards ---------- */
+  .dashboard {
+    max-width: 1400px;
+    margin: 20px auto 0;
+    padding: 0 22px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 980px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    box-shadow: var(--shadow-card);
+    border-top: 3px solid var(--mid);
+    animation: rise 0.35s ease both;
+  }
+  .stat-card.c-good { border-top-color: var(--good); }
+  .stat-card.c-watch { border-top-color: var(--watch); }
+  .stat-card.c-bad { border-top-color: var(--bad); }
+  .stat-card.c-brass { border-top-color: var(--brass); }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 5px;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stat-card:nth-child(1){animation-delay:0.00s}
+  .stat-card:nth-child(2){animation-delay:0.03s}
+  .stat-card:nth-child(3){animation-delay:0.06s}
+  .stat-card:nth-child(4){animation-delay:0.09s}
+  .stat-card:nth-child(5){animation-delay:0.12s}
+  .stat-card:nth-child(6){animation-delay:0.15s}
+
+  /* ---------- view switcher ---------- */
+  .toolbar {
+    max-width: 1400px;
+    margin: 18px auto 0;
+    padding: 0 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .switcher {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+    box-shadow: var(--shadow-card);
+  }
+  .switcher button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .switcher button.active { background: var(--bg-deep); color: #fff; }
+  .switcher button:not(.active):hover { background: var(--surface-2); }
+
+  .search-wrap { display: flex; align-items: center; gap: 8px; }
+  .search-input {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 220px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .search-input:focus { border-color: var(--brass); }
+
+  /* ---------- main panel ---------- */
+  main {
+    max-width: 1400px;
+    margin: 14px auto 60px;
+    padding: 0 22px;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  /* ---------- table ---------- */
+  .table-scroll { overflow-x: auto; }
+  table.data {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1180px;
+    font-size: 13px;
+  }
+  table.data thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line-strong);
+    text-align: left;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+  table.data thead th:hover { color: var(--ink); }
+  table.data thead th .arrow { opacity: 0.5; margin-left: 3px; font-size: 9px; }
+  table.data thead th.sorted { color: var(--brass-ink); }
+  table.data thead th.sorted .arrow { opacity: 1; }
+  table.data tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  table.data tbody tr.data-row { cursor: pointer; transition: background 0.1s ease; }
+  table.data tbody tr.data-row:hover { background: var(--surface-2); }
+  .col-project { position: sticky; left: 0; background: inherit; min-width: 250px; white-space: normal; }
+  table.data tbody tr.data-row .col-project { background: var(--surface); }
+  table.data tbody tr.data-row:hover .col-project { background: var(--surface-2); }
+  .proj-name { font-weight: 600; color: var(--ink); }
+  .proj-sub { color: var(--ink-faint); font-size: 11.5px; margin-top: 1px; }
+  .num { font-family: var(--font-mono); text-align: right; }
+  .mono { font-family: var(--font-mono); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .status-red { background: var(--bad-bg); color: var(--bad); border-color: var(--bad-line); }
+  .status-red .dot { background: var(--bad); }
+  .status-yellow { background: var(--watch-bg); color: var(--watch); border-color: var(--watch-line); }
+  .status-yellow .dot { background: var(--watch); }
+  .status-green { background: var(--good-bg); color: var(--good); border-color: var(--good-line); }
+  .status-green .dot { background: var(--good); }
+  .status-nodata { background: var(--nodata-bg); color: var(--nodata); border-color: var(--line); }
+  .status-nodata .dot { background: var(--nodata); }
+
+  .trend-up { color: var(--good); }
+  .trend-down { color: var(--bad); }
+  .trend-flat, .trend-new { color: var(--ink-faint); }
+
+  .chev { color: var(--ink-faint); font-size: 11px; transition: transform 0.15s ease; display: inline-block; }
+  tr.expanded .chev { transform: rotate(90deg); }
+
+  .detail-row td { padding: 0; border-bottom: 1px solid var(--line); }
+  .detail-row { display: none; }
+  .detail-row.open { display: table-row; }
+  .detail-wrap { padding: 16px 20px 20px 44px; background: var(--surface-2); }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 10px 22px;
+    margin-bottom: 16px;
+  }
+  .detail-field .k { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+  .detail-field .v { font-family: var(--font-mono); font-size: 13px; color: var(--ink); margin-top: 2px; }
+  .detail-note { font-size: 12.5px; color: var(--ink-soft); margin: 10px 0 16px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+  .lineitem-title { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin: 0 0 8px; }
+  table.lineitems { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  table.lineitems th { text-align: left; padding: 7px 10px; background: var(--surface-2); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); border-bottom: 1px solid var(--line); }
+  table.lineitems td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  table.lineitems tr:last-child td { border-bottom: none; }
+  .bucket-tag { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+  .bucket-LABOR { background: var(--good-bg); color: var(--good); }
+  .bucket-EXPENSE { background: var(--watch-bg); color: var(--watch); }
+  .bucket-SUB { background: var(--nodata-bg); color: var(--nodata); }
+
+  /* ---------- empty / helper text ---------- */
+  .empty-hint { padding: 60px 20px; text-align: center; color: var(--ink-faint); font-size: 13.5px; }
+
+  /* ---------- opportunity map ---------- */
+  .map-panel { padding: 20px; }
+  .map-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+  .map-head h3 { font-family: var(--font-display); font-size: 17px; margin: 0; }
+  .map-head p { margin: 2px 0 0; color: var(--ink-soft); font-size: 12.5px; }
+  .map-canvas-wrap { position: relative; margin-top: 14px; height: 480px; }
+  .quad-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    pointer-events: none;
+    max-width: 180px;
+    line-height: 1.35;
+  }
+  .quad-tl { top: 44px; left: 60px; }
+  .quad-tr { top: 44px; right: 12px; text-align: right; }
+  .quad-bl { bottom: 34px; left: 60px; }
+  .quad-br { bottom: 34px; right: 12px; text-align: right; }
+
+  /* ---------- trend view ---------- */
+  .trend-panel { padding: 20px; }
+  .trend-empty { text-align: center; padding: 50px 20px; color: var(--ink-faint); }
+  table.snapshots { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.snapshots th { text-align: left; padding: 9px 12px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); background: var(--surface-2); }
+  table.snapshots td { padding: 9px 12px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); }
+  table.snapshots tr:last-child td { border-bottom: none; }
+
+  /* ---------- footer / legend ---------- */
+  .legend {
+    max-width: 1400px;
+    margin: 18px auto 40px;
+    padding: 0 22px;
+    color: var(--ink-faint);
+    font-size: 12px;
+  }
+  .legend details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
+  .legend summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); font-size: 12.5px; }
+  .legend .legend-body { margin-top: 10px; line-height: 1.6; }
+  .legend .legend-body b { color: var(--ink); }
+  .legend code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  .footer-row {
+    max-width: 1400px;
+    margin: 0 auto 40px;
+    padding: 0 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .footer-row .danger-btn { color: var(--bad); border-color: var(--bad-line); }
+  .footer-row .danger-btn:hover { background: var(--bad-bg); }
+  .version-tag { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="mark">&#9875; Exec Summary Tracker</span>
+      <span class="tag">multiplier &middot; budget &middot; trend</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="file-meta" id="fileMeta"></div>
+      <button class="btn btn-ghost-dark btn-sm" id="exportHistoryBtn" title="Download your trend history as a backup file">Export history</button>
+      <button class="btn btn-ghost-dark btn-sm" id="importHistoryBtn" title="Restore trend history from a backup file">Import history</button>
+      <input type="file" id="importHistoryInput" accept="application/json">
+      <button class="btn btn-brass" id="loadBtn">Load export &#8593;</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xlsm">
+    </div>
+  </div>
+</header>
+
+<div class="dropzone" id="dropzoneWrap">
+  <div class="dropzone-card" id="dropzoneCard">
+    <h2>Drop this week's Power BI export here</h2>
+    <p>Or use "Load export" above. Works with the Executive Summary .xlsx export, unmodified.</p>
+    <button class="btn btn-brass" id="dropzoneBtn">Choose file&hellip;</button>
+    <div class="privacy-note">Everything runs in your browser. Your file and numbers never leave this device.</div>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard" style="display:none;"></div>
+
+<div class="toolbar" id="toolbar" style="display:none;">
+  <div class="switcher" id="viewSwitcher">
+    <button data-view="table" class="active">Table</button>
+    <button data-view="map">Opportunity Map</button>
+    <button data-view="trend">Trend</button>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text" placeholder="Filter by project, client, or manager&hellip;">
+  </div>
+</div>
+
+<main id="mainArea" style="display:none;">
+  <div class="panel" id="tableView">
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr id="tableHead"></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel map-panel" id="mapView" style="display:none;">
+    <div class="map-head">
+      <div>
+        <h3>Opportunity Map</h3>
+        <p>Multiplier performance vs. accessible budget remaining &mdash; the top-right is where extra hours do the most good.</p>
+      </div>
+    </div>
+    <div class="map-canvas-wrap">
+      <div class="quad-label quad-tl">Underperforming<br>&middot; has budget room</div>
+      <div class="quad-label quad-tr">Thriving<br>&middot; room to add hours</div>
+      <div class="quad-label quad-bl">At risk<br>&middot; underperforming &amp; tight</div>
+      <div class="quad-label quad-br">Thriving<br>&middot; budget is tight</div>
+      <canvas id="mapCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="panel trend-panel" id="trendView" style="display:none;">
+    <div id="trendContent"></div>
+  </div>
+</main>
+
+<div class="legend" id="legendWrap" style="display:none;">
+  <details>
+    <summary>How status and budget-remaining are calculated</summary>
+    <div class="legend-body">
+      <p><b>Status</b> combines two signals and shows the worse of the two: <b>Multiplier Variance</b> (actual PTD multiplier minus goal &mdash; red below <code>-0.30</code>, yellow below <code>0</code>, green at or above goal) and <b>WIP</b> (red if positive/unbilled, green if negative, yellow at exactly zero). A job sitting right on its goal multiplier but carrying a large positive WIP will show red, since unbilled revenue is a real risk even when the multiplier looks fine.</p>
+      <p><b>Labor / Expense / Accessible Remaining</b> come from the individual task lines under each project (not shown in the summary export you're used to). Each task line is classified by name: lines starting with <b>"Sub"</b> are subcontractor budgets &mdash; fixed price, not reallocatable, excluded from "accessible." Lines with <b>"Expense"</b> in the name go to the Expense bucket. Everything else (Labor, Project Management, processing/QC/reporting task lines, markups) defaults to the Labor bucket. Remaining = that bucket's total budgeted Fee minus its cost booked to date. Click any row to see the exact task-line breakdown and check the classification yourself.</p>
+      <p>A/R Balance is shown as its own sortable column rather than folded into status, since a comfortable receivables balance depends on your own collections norms &mdash; there's no one-size threshold built in.</p>
+      <p>Trend history is stored only in this browser (nothing is uploaded anywhere). Use Export/Import history to move it to another computer or keep a backup.</p>
+    </div>
+  </details>
+</div>
+
+<div class="footer-row" id="footerRow" style="display:none;">
+  <span class="version-tag">Exec Summary Tracker &middot; runs entirely client-side</span>
+  <button class="btn btn-ghost btn-sm danger-btn" id="clearDataBtn">Clear all data in this browser</button>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CORE PARSING (validated against a real 108-project export
+   -- see build notes. Leaf-based detail-line rollup handles
+   any nesting depth; Fee and Total Cost reconcile exactly to
+   each project's summary row.)
+   ========================================================= */
+
+function cleanText(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+function asNumber(v) {
+  if (v === null || v === undefined || v === "") return null;
+  if (typeof v === "number") return v;
+  if (v instanceof Date) return null;
+  var txt = String(v).replace(/,/g, "").replace(/\$/g, "").trim();
+  if (txt === "" || txt === "#DIV/0!" || txt === "#VALUE!" || txt === "#N/A") return null;
+  var n = parseFloat(txt);
+  return isNaN(n) ? null : n;
+}
+
+var PARENT_RE = /^\d+\.\d{2}$/;
+var DETAIL_RE = /^\d+\.\d{2}(\.\d{3})+$/;
+
+function isParentId(v) {
+  var t = cleanText(v);
+  if (!t) return false;
+  if (PARENT_RE.test(t)) return true;
+  if (t.toLowerCase().indexOf("etrac_") === 0) return true;
+  return false;
+}
+
+function classifyLine(name) {
+  var n = (name || "").toLowerCase().trim();
+  if (n.indexOf("sub") === 0) return "SUB";
+  if (n.indexOf("expense") !== -1) return "EXPENSE";
+  return "LABOR";
+}
+
+function cell(rows, r, c) {
+  var row = rows[r - 1];
+  if (!row) return null;
+  var v = row[c - 1];
+  return v === undefined ? null : v;
+}
+
+function findNextNoteRow(rows, startRow) {
+  var mr = rows.length;
+  for (var r = startRow + 1; r <= mr; r++) {
+    var v = cell(rows, r, 1);
+    if (typeof v === "string" && cleanText(v).indexOf("Project Note") === 0) return r;
+    if (r > startRow + 1 && isParentId(cell(rows, r, 1))) return null;
+  }
+  return null;
+}
+
+function parseExport(rows) {
+  var mr = rows.length;
+  var records = [];
+  var skippedBlocks = [];
+  var seen = {};
+
+  for (var r = 1; r <= mr; r++) {
+    var projectId = cleanText(cell(rows, r, 1));
+    var projectName = cleanText(cell(rows, r, 5));
+    if (!isParentId(projectId)) continue;
+    if (!projectName || projectName.toLowerCase() === "name") continue;
+    if (seen[projectId]) continue;
+    seen[projectId] = true;
+
+    var noteRow = findNextNoteRow(rows, r);
+    if (!noteRow) {
+      skippedBlocks.push({ projectId: projectId, projectName: projectName });
+      continue;
+    }
+    var summaryRow = noteRow - 1;
+
+    var clientName = cleanText(cell(rows, r, 10));
+    var projectManager = cleanText(cell(rows, r, 7));
+    var actualStart = cell(rows, r, 14);
+    var estCompletion = cell(rows, r, 16);
+    var projectStatus = cleanText(cell(rows, r, 29));
+
+    var feeContract = asNumber(cell(rows, summaryRow, 11));
+    var revenue = asNumber(cell(rows, summaryRow, 12));
+    var ptdEffMult = asNumber(cell(rows, summaryRow, 17));
+    var wip = asNumber(cell(rows, summaryRow, 19));
+    var laborCost = asNumber(cell(rows, summaryRow, 20));
+    var expense = asNumber(cell(rows, summaryRow, 21));
+    var billed = asNumber(cell(rows, summaryRow, 26));
+
+    var noteRaw = cleanText(cell(rows, noteRow, 1));
+    var projectNote = noteRaw.indexOf("Project Note") === 0 ? noteRaw : "";
+    var goalMultiplier = asNumber(cell(rows, noteRow, 17));
+    var billMultiplier = asNumber(cell(rows, noteRow, 20));
+    var lastInvoicedDate = cell(rows, noteRow, 22);
+    var arBalance = asNumber(cell(rows, noteRow, 29));
+
+    var revMinusExpense = null;
+    if (revenue !== null && expense !== null) revMinusExpense = revenue - expense;
+    if (ptdEffMult === null && revenue !== null && laborCost) ptdEffMult = revenue / laborCost;
+
+    var multiplierVariance = null;
+    if (ptdEffMult !== null && goalMultiplier !== null) multiplierVariance = ptdEffMult - goalMultiplier;
+
+    if (wip === null && revenue !== null && billed !== null) wip = revenue - billed;
+
+    var detailIds = [];
+    for (var dr = r + 1; dr < summaryRow; dr++) {
+      var idv = cleanText(cell(rows, dr, 1));
+      if (DETAIL_RE.test(idv)) detailIds.push({ id: idv, row: dr });
+    }
+
+    var laborFee = 0, laborCostToDate = 0;
+    var expenseFee = 0, expenseCostToDate = 0;
+    var subFee = 0, subCostToDate = 0;
+    var lineItems = [];
+
+    detailIds.forEach(function (d) {
+      var prefix = d.id + ".";
+      var isLeaf = !detailIds.some(function (other) {
+        return other.id !== d.id && other.id.indexOf(prefix) === 0;
+      });
+      if (!isLeaf) return;
+      var name = cleanText(cell(rows, d.row, 5));
+      var fee = asNumber(cell(rows, d.row, 11)) || 0;
+      var totalCost = asNumber(cell(rows, d.row, 22)) || 0;
+      var bucket = classifyLine(name);
+      lineItems.push({ id: d.id, name: name, bucket: bucket, fee: fee, costToDate: totalCost });
+      if (bucket === "LABOR") { laborFee += fee; laborCostToDate += totalCost; }
+      else if (bucket === "EXPENSE") { expenseFee += fee; expenseCostToDate += totalCost; }
+      else { subFee += fee; subCostToDate += totalCost; }
+    });
+
+    var laborRemaining = laborFee - laborCostToDate;
+    var expenseRemaining = expenseFee - expenseCostToDate;
+    var accessibleRemaining = laborRemaining + expenseRemaining;
+
+    records.push({
+      projectId: projectId, projectName: projectName, clientName: clientName,
+      feeContract: feeContract, revenue: revenue, invoiced: billed,
+      lastInvoicedDate: lastInvoicedDate, arBalance: arBalance, wip: wip,
+      expense: expense, revMinusExpense: revMinusExpense, laborCost: laborCost,
+      ptdEffMultiplier: ptdEffMult, goalMultiplier: goalMultiplier,
+      multiplierVariance: multiplierVariance, billMultiplier: billMultiplier,
+      projectManager: projectManager, projectStatus: projectStatus,
+      actualStart: actualStart, estCompletion: estCompletion, projectNote: projectNote,
+      laborFee: laborFee, laborCostToDate: laborCostToDate, laborRemaining: laborRemaining,
+      expenseFee: expenseFee, expenseCostToDate: expenseCostToDate, expenseRemaining: expenseRemaining,
+      subFee: subFee, subCostToDate: subCostToDate, accessibleRemaining: accessibleRemaining,
+      lineItems: lineItems,
+    });
+  }
+  return { records: records, skippedBlocks: skippedBlocks };
+}
+
+/* =========================================================
+   STATUS LOGIC
+   ========================================================= */
+
+var VARIANCE_RED_BELOW = -0.30;
+var VARIANCE_YELLOW_BELOW = 0.0;
+var WIP_RED_ABOVE = 0.0;
+var WIP_GREEN_BELOW = 0.0;
+var STATUS_RANK = { red: 3, yellow: 2, green: 1, nodata: 0 };
+
+function multiplierStatus(rec) {
+  var v = rec.multiplierVariance;
+  if (v === null) return "nodata";
+  if (v < VARIANCE_RED_BELOW) return "red";
+  if (v < VARIANCE_YELLOW_BELOW) return "yellow";
+  return "green";
+}
+function wipStatus(rec) {
+  var w = rec.wip;
+  if (w === null) return "nodata";
+  if (w > WIP_RED_ABOVE) return "red";
+  if (w < WIP_GREEN_BELOW) return "green";
+  return "yellow";
+}
+function combinedStatus(rec) {
+  var a = multiplierStatus(rec), b = wipStatus(rec);
+  if (a === "nodata") return b;
+  if (b === "nodata") return a;
+  return STATUS_RANK[a] >= STATUS_RANK[b] ? a : b;
+}
+var STATUS_HEX = { red: "#AA352A", yellow: "#93650A", green: "#1F7A4D", nodata: "#7C8CA0" };
+
+/* =========================================================
+   HISTORY / TREND (localStorage, per-browser)
+   ========================================================= */
+
+var HISTORY_KEY = "execTracker.history.v1";
+var PORTFOLIO_HISTORY_KEY = "execTracker.portfolioHistory.v1";
+var LAST_DATASET_KEY = "execTracker.lastDataset.v1";
+var HISTORY_WEEKS_KEPT = 60;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveHistory(h) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
+}
+function loadPortfolioHistory() {
+  try { return JSON.parse(localStorage.getItem(PORTFOLIO_HISTORY_KEY)) || []; } catch (e) { return []; }
+}
+function savePortfolioHistory(list) {
+  try { localStorage.setItem(PORTFOLIO_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+}
+
+function updateHistory(history, records, snapshotDate) {
+  records.forEach(function (rec) {
+    var pid = rec.projectId;
+    var entry = {
+      date: snapshotDate, projectName: rec.projectName,
+      ptdEffMultiplier: rec.ptdEffMultiplier, goalMultiplier: rec.goalMultiplier,
+      multiplierVariance: rec.multiplierVariance, wip: rec.wip, revenue: rec.revenue,
+      accessibleRemaining: rec.accessibleRemaining,
+    };
+    if (!history[pid]) history[pid] = [];
+    history[pid] = history[pid].filter(function (e) { return e.date !== snapshotDate; });
+    history[pid].push(entry);
+    history[pid].sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    if (history[pid].length > HISTORY_WEEKS_KEPT) {
+      history[pid] = history[pid].slice(history[pid].length - HISTORY_WEEKS_KEPT);
+    }
+  });
+}
+
+function computeTrend(history, projectId, currentVariance, snapshotDate) {
+  var entries = (history[projectId] || []).filter(function (e) { return e.date !== snapshotDate; });
+  if (!entries.length) return { text: "New", delta: null };
+  entries.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  var prior = entries[entries.length - 1].multiplierVariance;
+  if (prior === null || prior === undefined || currentVariance === null) return { text: "\u2013\u2013", delta: null };
+  var delta = currentVariance - prior;
+  if (Math.abs(delta) < 0.01) return { text: "flat \u00b7 0.00", delta: 0 };
+  var sign = delta > 0 ? "+" : "";
+  return { text: (delta > 0 ? "\u25B2 " : "\u25BC ") + sign + delta.toFixed(2), delta: delta };
+}
+
+function applyTrends(history, records, snapshotDate) {
+  records.forEach(function (rec) {
+    var t = computeTrend(history, rec.projectId, rec.multiplierVariance, snapshotDate);
+    rec.trendText = t.text;
+    rec.trendDelta = t.delta;
+  });
+}
+
+/* =========================================================
+   FORMATTING
+   ========================================================= */
+
+function fmtMoney(n) {
+  if (n === null || n === undefined || isNaN(n)) return "\u2014";
+  var sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtMoney2(n) {
+  if (n === null || n === undefined || isNaN(n)) return "\u2014";
+  var sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtMult(n) {
+  if (n === null || n === undefined || isNaN(n)) return "\u2014";
+  return (n >= 0 ? "" : "") + n.toFixed(2);
+}
+function fmtDate(v) {
+  if (!v) return "\u2014";
+  var d = (v instanceof Date) ? v : null;
+  if (!d) {
+    var parsed = new Date(v);
+    if (!isNaN(parsed.getTime())) d = parsed; else return String(v);
+  }
+  if (d.getFullYear() < 1901) return "\u2014";
+  return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+}
+function esc(s) {
+  return String(s === null || s === undefined ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+/* =========================================================
+   APP STATE + RENDER
+   ========================================================= */
+
+var state = {
+  records: [],
+  skippedBlocks: [],
+  snapshotDate: null,
+  fileName: null,
+  history: loadHistory(),
+  sortColumn: "multiplierVariance",
+  sortAscending: true,
+  view: "table",
+  expanded: {},
+  search: "",
+  mapChart: null,
+};
+
+var COLUMNS = [
+  { key: "status", label: "Status", sortable: false },
+  { key: "projectName", label: "Project", sortable: true },
+  { key: "projectManager", label: "Manager", sortable: true },
+  { key: "ptdEffMultiplier", label: "PTD Mult", sortable: true, num: true },
+  { key: "goalMultiplier", label: "Goal", sortable: true, num: true },
+  { key: "multiplierVariance", label: "Variance", sortable: true, num: true },
+  { key: "trendDelta", label: "Trend", sortable: true, num: true },
+  { key: "wip", label: "WIP", sortable: true, num: true },
+  { key: "arBalance", label: "A/R", sortable: true, num: true },
+  { key: "laborRemaining", label: "Labor Left", sortable: true, num: true },
+  { key: "expenseRemaining", label: "Expense Left", sortable: true, num: true },
+  { key: "accessibleRemaining", label: "Accessible", sortable: true, num: true },
+  { key: "revenue", label: "Revenue", sortable: true, num: true },
+  { key: "expand", label: "", sortable: false },
+];
+
+function sortRecords(records, column, ascending) {
+  var withVal = records.filter(function (r) { return r[column] !== null && r[column] !== undefined; });
+  var withoutVal = records.filter(function (r) { return r[column] === null || r[column] === undefined; });
+  withVal.sort(function (a, b) {
+    var av = a[column], bv = b[column];
+    if (av < bv) return ascending ? -1 : 1;
+    if (av > bv) return ascending ? 1 : -1;
+    return 0;
+  });
+  return withVal.concat(withoutVal);
+}
+
+function filteredRecords() {
+  var q = state.search.trim().toLowerCase();
+  var records = state.records;
+  if (q) {
+    records = records.filter(function (r) {
+      return (r.projectName || "").toLowerCase().indexOf(q) !== -1 ||
+        (r.clientName || "").toLowerCase().indexOf(q) !== -1 ||
+        (r.projectManager || "").toLowerCase().indexOf(q) !== -1 ||
+        (r.projectId || "").toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  return sortRecords(records, state.sortColumn, state.sortAscending);
+}
+
+function computeDashboard(records) {
+  var red = 0, yellow = 0, green = 0;
+  var totalRevenue = 0, totalWip = 0, totalAccessible = 0;
+  records.forEach(function (r) {
+    var s = combinedStatus(r);
+    if (s === "red") red++; else if (s === "yellow") yellow++; else if (s === "green") green++;
+    totalRevenue += r.revenue || 0;
+    totalWip += r.wip || 0;
+    totalAccessible += r.accessibleRemaining || 0;
+  });
+  return { total: records.length, red: red, yellow: yellow, green: green, totalRevenue: totalRevenue, totalWip: totalWip, totalAccessible: totalAccessible };
+}
+
+function renderDashboard() {
+  var d = computeDashboard(state.records);
+  var el = document.getElementById("dashboard");
+  el.innerHTML = [
+    card("Total Projects", d.total, ""),
+    card("On / Above Goal", d.green, "c-good"),
+    card("Watch", d.yellow, "c-watch"),
+    card("Under Goal / WIP Risk", d.red, "c-bad"),
+    card("Total Revenue", fmtMoney(d.totalRevenue), "c-brass"),
+    card("Accessible Remaining", fmtMoney(d.totalAccessible), "c-brass"),
+  ].join("");
+  el.style.display = "grid";
+  function card(label, value, cls) {
+    return '<div class="stat-card ' + cls + '"><p class="stat-label">' + esc(label) + '</p><p class="stat-value">' + esc(value) + "</p></div>";
+  }
+}
+
+function statusPill(status) {
+  var labelMap = { red: "Under goal", yellow: "Watch", green: "On goal", nodata: "No data" };
+  return '<span class="status-pill status-' + status + '"><span class="dot"></span>' + labelMap[status] + "</span>";
+}
+
+function renderTableHead() {
+  var tr = document.getElementById("tableHead");
+  tr.innerHTML = COLUMNS.map(function (c) {
+    if (!c.sortable) return "<th>" + esc(c.label) + "</th>";
+    var sorted = state.sortColumn === c.key;
+    var arrow = sorted ? (state.sortAscending ? "\u25B2" : "\u25BC") : "\u25B2";
+    return '<th data-col="' + c.key + '" class="' + (sorted ? "sorted" : "") + '">' + esc(c.label) + ' <span class="arrow">' + arrow + "</span></th>";
+  }).join("");
+  Array.prototype.forEach.call(tr.querySelectorAll("th[data-col]"), function (th) {
+    th.addEventListener("click", function () {
+      var col = th.getAttribute("data-col");
+      if (state.sortColumn === col) state.sortAscending = !state.sortAscending;
+      else { state.sortColumn = col; state.sortAscending = true; }
+      renderTableHead();
+      renderTableBody();
+    });
+  });
+}
+
+function renderTableBody() {
+  var records = filteredRecords();
+  var body = document.getElementById("tableBody");
+  if (!records.length) {
+    body.innerHTML = '<tr><td colspan="' + COLUMNS.length + '"><div class="empty-hint">No projects match that filter.</div></td></tr>';
+    return;
+  }
+  var html = "";
+  records.forEach(function (r) {
+    var status = combinedStatus(r);
+    var trendCls = r.trendDelta === null ? "trend-new" : (r.trendDelta > 0 ? "trend-up" : (r.trendDelta < 0 ? "trend-down" : "trend-flat"));
+    var rowId = "row_" + r.projectId.replace(/\W/g, "_");
+    var isOpen = !!state.expanded[r.projectId];
+    html += '<tr class="data-row' + (isOpen ? " expanded" : "") + '" data-pid="' + esc(r.projectId) + '">';
+    html += "<td>" + statusPill(status) + "</td>";
+    html += '<td class="col-project"><div class="proj-name">' + esc(r.projectName) + '</div><div class="proj-sub">' + esc(r.clientName || "\u2014") + "</div></td>";
+    html += "<td>" + esc(r.projectManager || "\u2014") + "</td>";
+    html += '<td class="num mono">' + fmtMult(r.ptdEffMultiplier) + "</td>";
+    html += '<td class="num mono">' + fmtMult(r.goalMultiplier) + "</td>";
+    html += '<td class="num mono">' + fmtMult(r.multiplierVariance) + "</td>";
+    html += '<td class="num mono ' + trendCls + '">' + esc(r.trendText || "") + "</td>";
+    html += '<td class="num mono">' + fmtMoney(r.wip) + "</td>";
+    html += '<td class="num mono">' + fmtMoney(r.arBalance) + "</td>";
+    html += '<td class="num mono">' + fmtMoney(r.laborRemaining) + "</td>";
+    html += '<td class="num mono">' + fmtMoney(r.expenseRemaining) + "</td>";
+    html += '<td class="num mono"><b>' + fmtMoney(r.accessibleRemaining) + "</b></td>";
+    html += '<td class="num mono">' + fmtMoney(r.revenue) + "</td>";
+    html += '<td><span class="chev">&#9656;</span></td>';
+    html += "</tr>";
+    html += '<tr class="detail-row' + (isOpen ? " open" : "") + '" id="detail_' + rowId + '"><td colspan="' + COLUMNS.length + '">' + (isOpen ? renderDetail(r) : "") + "</td></tr>";
+  });
+  body.innerHTML = html;
+
+  Array.prototype.forEach.call(body.querySelectorAll("tr.data-row"), function (tr) {
+    tr.addEventListener("click", function () {
+      var pid = tr.getAttribute("data-pid");
+      state.expanded[pid] = !state.expanded[pid];
+      renderTableBody();
+    });
+  });
+}
+
+function renderDetail(r) {
+  var lineRows = r.lineItems.map(function (li) {
+    return "<tr><td>" + esc(li.name) + '</td><td><span class="bucket-tag bucket-' + li.bucket + '">' + li.bucket + "</span></td>" +
+      '<td class="num mono">' + fmtMoney2(li.fee) + '</td><td class="num mono">' + fmtMoney2(li.costToDate) + '</td><td class="num mono">' + fmtMoney2(li.fee - li.costToDate) + "</td></tr>";
+  }).join("");
+  return '<div class="detail-wrap">' +
+    '<div class="detail-grid">' +
+      field("Client", r.clientName) +
+      field("Fee / Contract", fmtMoney2(r.feeContract)) +
+      field("Invoiced", fmtMoney2(r.invoiced)) +
+      field("Last Invoice", fmtDate(r.lastInvoicedDate)) +
+      field("Labor Cost (JTD)", fmtMoney2(r.laborCost)) +
+      field("Expense (Subs&ODC)", fmtMoney2(r.expense)) +
+      field("Bill Multiplier", fmtMult(r.billMultiplier)) +
+      field("Sub Fee (not accessible)", fmtMoney2(r.subFee)) +
+      field("Status", r.projectStatus || "\u2014") +
+      field("Start", fmtDate(r.actualStart)) +
+      field("Est. Completion", fmtDate(r.estCompletion)) +
+      field("Project ID", r.projectId) +
+    "</div>" +
+    (r.projectNote ? '<div class="detail-note">' + esc(r.projectNote) + "</div>" : "") +
+    '<p class="lineitem-title">Task-line budget breakdown</p>' +
+    '<table class="lineitems"><thead><tr><th>Line</th><th>Bucket</th><th class="num">Fee</th><th class="num">Cost to date</th><th class="num">Remaining</th></tr></thead><tbody>' +
+    (lineRows || '<tr><td colspan="5" style="color:var(--ink-faint)">No task lines found under this project.</td></tr>') +
+    "</tbody></table>" +
+    "</div>";
+  function field(k, v) {
+    return '<div class="detail-field"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>";
+  }
+}
+
+/* ---------- Opportunity Map ---------- */
+
+function renderMap() {
+  var canvas = document.getElementById("mapCanvas");
+  var points = state.records.filter(function (r) { return r.multiplierVariance !== null && r.accessibleRemaining !== null; });
+  var data = points.map(function (r) { return { x: r.multiplierVariance, y: r.accessibleRemaining }; });
+  var colors = points.map(function (r) { return STATUS_HEX[combinedStatus(r)]; });
+
+  if (state.mapChart) { state.mapChart.destroy(); }
+  if (!points.length) return;
+
+  var gridColor = "#DBE3EA";
+  var zeroColor = "#BD8A2E";
+
+  state.mapChart = new Chart(canvas.getContext("2d"), {
+    type: "scatter",
+    data: { datasets: [{ label: "Projects", data: data, backgroundColor: colors, borderColor: "rgba(0,0,0,0.15)", borderWidth: 1, pointRadius: 6, pointHoverRadius: 8 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          title: { display: true, text: "Multiplier Variance (actual \u2212 goal)", font: { family: "IBM Plex Mono", size: 11 } },
+          grid: { color: function (ctx) { return ctx.tick.value === 0 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 1; } },
+          ticks: { font: { family: "IBM Plex Mono", size: 10 } },
+        },
+        y: {
+          title: { display: true, text: "Accessible Budget Remaining ($)", font: { family: "IBM Plex Mono", size: 11 } },
+          grid: { color: function (ctx) { return ctx.tick.value === 0 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 1; } },
+          ticks: { font: { family: "IBM Plex Mono", size: 10 }, callback: function (v) { return fmtMoney(v); } },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              var r = points[ctx.dataIndex];
+              return [r.projectName, "Variance: " + fmtMult(r.multiplierVariance), "Accessible: " + fmtMoney(r.accessibleRemaining)];
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+/* ---------- Trend view ---------- */
+
+function renderTrend() {
+  var portfolioHistory = loadPortfolioHistory();
+  var el = document.getElementById("trendContent");
+  if (portfolioHistory.length < 2) {
+    el.innerHTML = '<div class="trend-empty">Load an export each week and this view will fill in with your portfolio\u2019s trend over time. Right now there' + (portfolioHistory.length === 1 ? "\u2019s only one snapshot recorded." : "\u2019s no history yet.") + "</div>";
+    return;
+  }
+  var rows = portfolioHistory.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (h) {
+    return "<tr><td>" + esc(h.date) + '</td><td class="num">' + h.total + '</td><td class="num" style="color:var(--good)">' + h.green +
+      '</td><td class="num" style="color:var(--watch)">' + h.yellow + '</td><td class="num" style="color:var(--bad)">' + h.red +
+      '</td><td class="num">' + fmtMoney(h.totalRevenue) + '</td><td class="num">' + fmtMoney(h.totalWip) + '</td><td class="num">' + fmtMoney(h.totalAccessible) + "</td></tr>";
+  }).join("");
+  el.innerHTML = '<table class="snapshots"><thead><tr><th>Snapshot</th><th class="num">Projects</th><th class="num">Green</th><th class="num">Yellow</th><th class="num">Red</th><th class="num">Revenue</th><th class="num">WIP</th><th class="num">Accessible</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
+/* ---------- view switching ---------- */
+
+function setView(view) {
+  state.view = view;
+  document.getElementById("tableView").style.display = view === "table" ? "block" : "none";
+  document.getElementById("mapView").style.display = view === "map" ? "block" : "none";
+  document.getElementById("trendView").style.display = view === "trend" ? "block" : "none";
+  Array.prototype.forEach.call(document.querySelectorAll("#viewSwitcher button"), function (b) {
+    b.classList.toggle("active", b.getAttribute("data-view") === view);
+  });
+  if (view === "map") renderMap();
+  if (view === "trend") renderTrend();
+}
+
+/* =========================================================
+   FILE LOADING
+   ========================================================= */
+
+function handleWorkbook(arrayBuffer, fileName) {
+  var wb;
+  try {
+    wb = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
+  } catch (e) {
+    alert("Could not read that file. Make sure it's the Power BI Executive Summary .xlsx export, unmodified.\n\n" + e.message);
+    return;
+  }
+  var ws = wb.Sheets[wb.SheetNames[0]];
+  var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  var parsed = parseExport(rows);
+
+  if (!parsed.records.length) {
+    alert("No project blocks were found in that file. Double-check it's the Executive Summary export.");
+    return;
+  }
+
+  var snapshotDate = new Date().toISOString().slice(0, 10);
+  updateHistory(state.history, parsed.records, snapshotDate);
+  saveHistory(state.history);
+  applyTrends(state.history, parsed.records, snapshotDate);
+
+  state.records = parsed.records;
+  state.skippedBlocks = parsed.skippedBlocks;
+  state.snapshotDate = snapshotDate;
+  state.fileName = fileName;
+  state.expanded = {};
+
+  var dashboardStats = computeDashboard(state.records);
+  var portfolioHistory = loadPortfolioHistory();
+  portfolioHistory = portfolioHistory.filter(function (h) { return h.date !== snapshotDate; });
+  portfolioHistory.push({
+    date: snapshotDate, total: dashboardStats.total, red: dashboardStats.red, yellow: dashboardStats.yellow,
+    green: dashboardStats.green, totalRevenue: dashboardStats.totalRevenue, totalWip: dashboardStats.totalWip,
+    totalAccessible: dashboardStats.totalAccessible,
+  });
+  savePortfolioHistory(portfolioHistory);
+
+  try {
+    localStorage.setItem(LAST_DATASET_KEY, JSON.stringify({ records: state.records, skippedBlocks: state.skippedBlocks, snapshotDate: snapshotDate, fileName: fileName }));
+  } catch (e) {}
+
+  renderAll();
+}
+
+function renderAll() {
+  document.getElementById("dropzoneWrap").style.display = "none";
+  document.getElementById("toolbar").style.display = "flex";
+  document.getElementById("mainArea").style.display = "block";
+  document.getElementById("legendWrap").style.display = "block";
+  document.getElementById("footerRow").style.display = "flex";
+
+  var meta = state.skippedBlocks.length
+    ? state.records.length + " projects &middot; snapshot " + state.snapshotDate + " &middot; " + state.skippedBlocks.length + " skipped (no Project Note row) &mdash; see below"
+    : state.records.length + " projects &middot; snapshot " + state.snapshotDate;
+  document.getElementById("fileMeta").innerHTML = esc(state.fileName || "") + "<br>" + meta;
+
+  renderDashboard();
+  renderTableHead();
+  renderTableBody();
+  if (state.view === "map") renderMap();
+  if (state.view === "trend") renderTrend();
+
+  if (state.skippedBlocks.length) {
+    var note = document.getElementById("skippedNote");
+    var msg = "Skipped (no Project Note row found): " + state.skippedBlocks.map(function (s) { return s.projectId + " " + s.projectName; }).join("; ");
+    if (!note) {
+      note = document.createElement("div");
+      note.id = "skippedNote";
+      note.style.cssText = "max-width:1400px;margin:8px auto 0;padding:10px 22px;color:var(--bad);font-size:12.5px;";
+      document.getElementById("mainArea").after(note);
+    }
+    note.textContent = msg;
+  } else {
+    var existing = document.getElementById("skippedNote");
+    if (existing) existing.remove();
+  }
+}
+
+/* =========================================================
+   WIRING
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+  var fileInput = document.getElementById("fileInput");
+  var loadBtn = document.getElementById("loadBtn");
+  var dropzoneBtn = document.getElementById("dropzoneBtn");
+  var dropzoneCard = document.getElementById("dropzoneCard");
+
+  function openPicker() { fileInput.click(); }
+  loadBtn.addEventListener("click", openPicker);
+  dropzoneBtn.addEventListener("click", openPicker);
+
+  fileInput.addEventListener("change", function () {
+    var file = fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) { handleWorkbook(e.target.result, file.name); };
+    reader.readAsArrayBuffer(file);
+  });
+
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.add("drag-over"); });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.remove("drag-over"); });
+  });
+  dropzoneCard.addEventListener("drop", function (e) {
+    var file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) { handleWorkbook(ev.target.result, file.name); };
+    reader.readAsArrayBuffer(file);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("#viewSwitcher button"), function (b) {
+    b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
+  });
+
+  document.getElementById("searchInput").addEventListener("input", function (e) {
+    state.search = e.target.value;
+    renderTableBody();
+  });
+
+  document.getElementById("exportHistoryBtn").addEventListener("click", function () {
+    var payload = { history: state.history, portfolioHistory: loadPortfolioHistory(), exportedAt: new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "exec-summary-history-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+  });
+
+  var importInput = document.getElementById("importHistoryInput");
+  document.getElementById("importHistoryBtn").addEventListener("click", function () { importInput.click(); });
+  importInput.addEventListener("change", function () {
+    var file = importInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var payload = JSON.parse(e.target.result);
+        if (payload.history) { state.history = payload.history; saveHistory(state.history); }
+        if (payload.portfolioHistory) { savePortfolioHistory(payload.portfolioHistory); }
+        alert("History imported.");
+        if (state.view === "trend") renderTrend();
+      } catch (err) {
+        alert("Couldn't read that history file: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById("clearDataBtn").addEventListener("click", function () {
+    if (!confirm("This clears all trend history and the cached dataset stored in this browser. This cannot be undone. Continue?")) return;
+    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(PORTFOLIO_HISTORY_KEY);
+    localStorage.removeItem(LAST_DATASET_KEY);
+    location.reload();
+  });
+
+  // Restore last session, if any, so a page refresh doesn't lose your view.
+  try {
+    var cached = JSON.parse(localStorage.getItem(LAST_DATASET_KEY) || "null");
+    if (cached && cached.records && cached.records.length) {
+      state.records = cached.records;
+      state.skippedBlocks = cached.skippedBlocks || [];
+      state.snapshotDate = cached.snapshotDate;
+      state.fileName = cached.fileName;
+      applyTrends(state.history, state.records, state.snapshotDate);
+      renderAll();
+    }
+  } catch (e) {}
+});
+</script>
+</body>
+</html>
