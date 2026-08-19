@@ -4,503 +4,292 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Exec Summary Tracker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg-page: #EEF2F6;
-    --bg-deep: #0B2540;
-    --bg-deep-2: #123258;
-    --surface: #FFFFFF;
-    --surface-2: #F5F8FA;
-    --ink: #10243B;
-    --ink-soft: #51697F;
-    --ink-faint: #8398AB;
-    --on-deep: #DCE8F2;
-    --on-deep-soft: #8FA9C2;
-    --line: #DBE3EA;
-    --line-strong: #C0CDD9;
-    --shallow: #6FC3D9;
-    --mid: #2C6E8E;
-    --brass: #BD8A2E;
-    --brass-ink: #7A5A1C;
-    --brass-bg: #FBF2E1;
+    --bg-app: #F4F6F8;
+    --bg-panel: #FFFFFF;
+    --bg-head: #E9EDF1;
+    --bg-toolbar: #F0F2F4;
+    --bg-strip: #14283F;
+    --ink: #1B2733;
+    --ink-soft: #5B6B7A;
+    --ink-faint: #8996A3;
+    --on-strip: #E7EDF3;
+    --on-strip-soft: #8FA3B8;
+    --grid: #D7DDE3;
+    --grid-strong: #C2CAD2;
+    --brass: #B9832C;
+    --brass-dark: #8E641F;
+    --brass-bg: #FBF1DF;
     --good: #1F7A4D;
-    --good-bg: #E1F3EA;
-    --good-line: #B7E1CA;
-    --watch: #93650A;
-    --watch-bg: #FCEECB;
-    --watch-line: #F1D998;
-    --bad: #AA352A;
-    --bad-bg: #FBE6E3;
-    --bad-line: #F0C2BA;
-    --nodata: #7C8CA0;
-    --nodata-bg: #E9EEF2;
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
-    --radius: 10px;
-    --radius-sm: 6px;
-    --shadow-card: 0 1px 2px rgba(11,37,64,0.07), 0 6px 20px rgba(11,37,64,0.07);
+    --good-bg: #E4F4EB;
+    --good-line: #B9DFC7;
+    --watch: #92650B;
+    --watch-bg: #FCEFCE;
+    --watch-line: #EFD89C;
+    --bad: #A93A2E;
+    --bad-bg: #FBE7E4;
+    --bad-line: #EFC3BB;
+    --pending: #566779;
+    --pending-bg: #EAEEF1;
+    --pending-line: #CBD3DA;
+    --font-ui: Calibri, 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --radius: 6px;
   }
-
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: var(--bg-page);
+    background: var(--bg-app);
     color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 14.5px;
-    line-height: 1.45;
-    -webkit-font-smoothing: antialiased;
+    font-family: var(--font-ui);
+    font-size: 13.5px;
+    line-height: 1.4;
   }
-  a { color: inherit; }
   button { font-family: inherit; }
-  :focus-visible {
-    outline: 2px solid var(--brass);
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+  .wrap { width: 100%; max-width: 2200px; margin: 0 auto; padding: 0 16px; }
 
-  /* ---------- header ---------- */
-  header.topbar {
-    position: relative;
-    background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
-    color: var(--on-deep);
-    overflow: hidden;
+  /* ---------- brand strip ---------- */
+  .brandstrip {
+    background: var(--bg-strip);
+    color: var(--on-strip);
+    padding: 7px 0;
   }
-  header.topbar::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    opacity: 0.35;
-    background-image:
-      repeating-radial-gradient(circle at 12% 120%, transparent 0, transparent 38px, rgba(111,195,217,0.10) 39px, rgba(111,195,217,0.10) 40px),
-      repeating-radial-gradient(circle at 88% -40%, transparent 0, transparent 52px, rgba(189,138,46,0.09) 53px, rgba(189,138,46,0.09) 54px);
-    pointer-events: none;
-  }
-  .topbar-inner {
-    position: relative;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 18px 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .brand { display: flex; align-items: baseline; gap: 10px; }
-  .brand .mark {
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-  .brand .tag {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--on-deep-soft);
-  }
-  .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .file-meta {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--on-deep-soft);
-    max-width: 360px;
-    text-align: right;
-  }
+  .brandstrip .wrap { display: flex; align-items: center; gap: 8px; }
+  .brandstrip .mark { font-size: 14px; font-weight: 700; letter-spacing: 0.01em; }
+  .brandstrip .tag { font-size: 11px; color: var(--on-strip-soft); letter-spacing: 0.02em; }
 
+  /* ---------- toolbar ---------- */
+  .toolbar {
+    background: var(--bg-toolbar);
+    border-bottom: 1px solid var(--grid-strong);
+  }
+  .toolbar .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 8px 16px; flex-wrap: wrap;
+  }
+  .file-meta { font-size: 11.5px; color: var(--ink-soft); }
+  .toolbar-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .btn {
-    appearance: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
-    white-space: nowrap;
+    appearance: none; border: 1px solid var(--grid-strong); background: var(--bg-panel);
+    color: var(--ink); border-radius: var(--radius); padding: 6px 11px; font-size: 12.5px;
+    font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
   }
+  .btn:hover { background: var(--bg-head); }
   .btn:active { transform: translateY(1px); }
-  .btn-brass {
-    background: var(--brass);
-    color: #2A1E08;
-  }
-  .btn-brass:hover { background: #CB9938; }
-  .btn-ghost-dark {
-    background: rgba(255,255,255,0.06);
-    color: var(--on-deep);
-    border-color: rgba(220,232,242,0.25);
-  }
-  .btn-ghost-dark:hover { background: rgba(255,255,255,0.12); }
-  .btn-ghost {
-    background: transparent;
-    color: var(--ink-soft);
-    border-color: var(--line-strong);
-  }
-  .btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
-  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-primary { background: var(--brass); border-color: var(--brass-dark); color: #2A1D08; }
+  .btn-primary:hover { background: #C79438; }
   input[type=file] { display: none; }
 
-  /* ---------- dropzone (empty state) ---------- */
-  .dropzone {
-    max-width: 1400px;
-    margin: 28px auto;
-    padding: 0 22px;
-  }
+  /* ---------- dropzone ---------- */
+  .dropzone { padding: 26px 16px; }
   .dropzone-card {
-    border: 1.5px dashed var(--line-strong);
-    border-radius: var(--radius);
-    background: var(--surface);
-    padding: 46px 24px;
-    text-align: center;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    border: 1.5px dashed var(--grid-strong); border-radius: var(--radius); background: var(--bg-panel);
+    padding: 40px 20px; text-align: center;
   }
-  .dropzone-card.drag-over {
-    border-color: var(--brass);
-    background: var(--brass-bg);
-  }
-  .dropzone-card h2 {
-    font-family: var(--font-display);
-    font-size: 21px;
-    margin: 0 0 6px;
-  }
-  .dropzone-card p { color: var(--ink-soft); margin: 0 0 18px; font-size: 13.5px; }
-  .dropzone-card .privacy-note {
-    margin-top: 16px;
-    font-size: 12px;
-    color: var(--ink-faint);
-    font-family: var(--font-mono);
-  }
+  .dropzone-card.drag-over { border-color: var(--brass); background: var(--brass-bg); }
+  .dropzone-card h2 { font-size: 18px; margin: 0 0 6px; }
+  .dropzone-card p { color: var(--ink-soft); margin: 0 0 16px; font-size: 13px; }
+  .dropzone-card .privacy-note { margin-top: 14px; font-size: 11.5px; color: var(--ink-faint); }
 
-  /* ---------- dashboard cards ---------- */
-  .dashboard {
-    max-width: 1400px;
-    margin: 20px auto 0;
-    padding: 0 22px;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-  }
-  @media (max-width: 980px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 560px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
-
+  /* ---------- dashboard ---------- */
+  .dashboard { padding: 14px 16px 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  @media (max-width: 1100px) { .dashboard { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 620px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
   .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 13px 14px;
-    box-shadow: var(--shadow-card);
-    border-top: 3px solid var(--mid);
-    animation: rise 0.35s ease both;
+    background: var(--bg-panel); border: 1px solid var(--grid); border-top: 3px solid var(--ink-faint);
+    border-radius: var(--radius); padding: 10px 12px;
   }
   .stat-card.c-good { border-top-color: var(--good); }
   .stat-card.c-watch { border-top-color: var(--watch); }
   .stat-card.c-bad { border-top-color: var(--bad); }
+  .stat-card.c-pending { border-top-color: var(--pending); }
   .stat-card.c-brass { border-top-color: var(--brass); }
-  .stat-label {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin: 0 0 5px;
-  }
-  .stat-value {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .stat-card:nth-child(1){animation-delay:0.00s}
-  .stat-card:nth-child(2){animation-delay:0.03s}
-  .stat-card:nth-child(3){animation-delay:0.06s}
-  .stat-card:nth-child(4){animation-delay:0.09s}
-  .stat-card:nth-child(5){animation-delay:0.12s}
-  .stat-card:nth-child(6){animation-delay:0.15s}
+  .stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin: 0 0 4px; }
+  .stat-value { font-size: 19px; font-weight: 700; color: var(--ink); }
 
-  /* ---------- view switcher ---------- */
-  .toolbar {
-    max-width: 1400px;
-    margin: 18px auto 0;
-    padding: 0 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-  .switcher {
-    display: inline-flex;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 3px;
-    gap: 2px;
-    box-shadow: var(--shadow-card);
-  }
-  .switcher button {
-    appearance: none;
-    border: none;
-    background: transparent;
-    color: var(--ink-soft);
-    font-weight: 600;
-    font-size: 12.5px;
-    padding: 7px 16px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .switcher button.active { background: var(--bg-deep); color: #fff; }
-  .switcher button:not(.active):hover { background: var(--surface-2); }
-
-  .search-wrap { display: flex; align-items: center; gap: 8px; }
+  /* ---------- view switcher / search row ---------- */
+  .subtoolbar { padding: 12px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .switcher { display: inline-flex; background: var(--bg-panel); border: 1px solid var(--grid-strong); border-radius: var(--radius); overflow: hidden; }
+  .switcher button { appearance: none; border: none; border-right: 1px solid var(--grid-strong); background: var(--bg-panel); color: var(--ink-soft); font-weight: 600; font-size: 12px; padding: 7px 14px; cursor: pointer; }
+  .switcher button:last-child { border-right: none; }
+  .switcher button.active { background: var(--bg-strip); color: #fff; }
+  .switcher button:not(.active):hover { background: var(--bg-head); }
   .search-input {
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-size: 13px;
-    width: 220px;
-    background: var(--surface);
-    color: var(--ink);
+    border: 1px solid var(--grid-strong); border-radius: var(--radius); padding: 7px 10px;
+    font-size: 12.5px; width: 240px; background: var(--bg-panel); color: var(--ink); font-family: var(--font-ui);
   }
   .search-input:focus { border-color: var(--brass); }
 
-  /* ---------- main panel ---------- */
-  main {
-    max-width: 1400px;
-    margin: 14px auto 60px;
-    padding: 0 22px;
-  }
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-  }
+  /* ---------- main ---------- */
+  main { padding: 12px 16px 40px; }
+  .panel { background: var(--bg-panel); border: 1px solid var(--grid-strong); border-radius: var(--radius); overflow: hidden; }
 
-  /* ---------- table ---------- */
   .table-scroll { overflow-x: auto; }
-  table.data {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 1180px;
-    font-size: 13px;
-  }
+  table.data { border-collapse: collapse; table-layout: fixed; font-size: 12.5px; }
+  table.data th, table.data td { border: 1px solid var(--grid); padding: 6px 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.data td.wrap-cell { white-space: normal; }
   table.data thead th {
-    position: sticky;
-    top: 0;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--line-strong);
-    text-align: left;
-    padding: 10px 12px;
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    cursor: pointer;
-    white-space: nowrap;
-    user-select: none;
+    position: sticky; top: 0; background: var(--bg-head); text-align: left; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.02em; color: var(--ink-soft); user-select: none; position: relative;
+    z-index: 2;
   }
-  table.data thead th:hover { color: var(--ink); }
-  table.data thead th .arrow { opacity: 0.5; margin-left: 3px; font-size: 9px; }
-  table.data thead th.sorted { color: var(--brass-ink); }
-  table.data thead th.sorted .arrow { opacity: 1; }
-  table.data tbody td {
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--line);
-    vertical-align: middle;
-    white-space: nowrap;
-  }
-  table.data tbody tr.data-row { cursor: pointer; transition: background 0.1s ease; }
-  table.data tbody tr.data-row:hover { background: var(--surface-2); }
-  .col-project { position: sticky; left: 0; background: inherit; min-width: 250px; white-space: normal; }
-  table.data tbody tr.data-row .col-project { background: var(--surface); }
-  table.data tbody tr.data-row:hover .col-project { background: var(--surface-2); }
-  .proj-name { font-weight: 600; color: var(--ink); }
-  .proj-sub { color: var(--ink-faint); font-size: 11.5px; margin-top: 1px; }
-  .num { font-family: var(--font-mono); text-align: right; }
-  .mono { font-family: var(--font-mono); }
+  .th-label { cursor: pointer; display: inline-block; padding-right: 4px; }
+  .th-label:hover { color: var(--ink); }
+  th.sorted .th-label { color: var(--brass-dark); }
+  .th-label .arrow { font-size: 8px; opacity: 0.55; margin-left: 2px; }
+  th.sorted .th-label .arrow { opacity: 1; }
+  .resizer { position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; }
+  .resizer:hover, .resizer.active { background: var(--brass); opacity: 0.5; }
+
+  table.data tbody tr.data-row { cursor: pointer; }
+  table.data tbody tr.data-row:hover td { background: #F6F8FA; }
+  .proj-name { font-weight: 700; color: var(--ink); }
+  .proj-sub { color: var(--ink-faint); font-size: 11px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
 
   .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 999px;
-    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.02em; padding: 2px 7px; border-radius: 999px; border: 1px solid transparent;
   }
-  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   .status-red { background: var(--bad-bg); color: var(--bad); border-color: var(--bad-line); }
   .status-red .dot { background: var(--bad); }
   .status-yellow { background: var(--watch-bg); color: var(--watch); border-color: var(--watch-line); }
   .status-yellow .dot { background: var(--watch); }
   .status-green { background: var(--good-bg); color: var(--good); border-color: var(--good-line); }
   .status-green .dot { background: var(--good); }
-  .status-nodata { background: var(--nodata-bg); color: var(--nodata); border-color: var(--line); }
-  .status-nodata .dot { background: var(--nodata); }
+  .status-pending { background: var(--pending-bg); color: var(--pending); border-color: var(--pending-line); border-style: dashed; }
+  .status-pending .dot { background: var(--pending); }
 
-  .trend-up { color: var(--good); }
-  .trend-down { color: var(--bad); }
+  .trend-up { color: var(--good); font-weight: 600; }
+  .trend-down { color: var(--bad); font-weight: 600; }
   .trend-flat, .trend-new { color: var(--ink-faint); }
-
-  .chev { color: var(--ink-faint); font-size: 11px; transition: transform 0.15s ease; display: inline-block; }
+  .chev { color: var(--ink-faint); font-size: 10px; display: inline-block; transition: transform 0.12s ease; }
   tr.expanded .chev { transform: rotate(90deg); }
 
-  .detail-row td { padding: 0; border-bottom: 1px solid var(--line); }
-  .detail-row { display: none; }
-  .detail-row.open { display: table-row; }
-  .detail-wrap { padding: 16px 20px 20px 44px; background: var(--surface-2); }
-  .detail-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(120px, 1fr));
-    gap: 10px 22px;
-    margin-bottom: 16px;
-  }
-  .detail-field .k { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
-  .detail-field .v { font-family: var(--font-mono); font-size: 13px; color: var(--ink); margin-top: 2px; }
-  .detail-note { font-size: 12.5px; color: var(--ink-soft); margin: 10px 0 16px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); }
-  .lineitem-title { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin: 0 0 8px; }
-  table.lineitems { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
-  table.lineitems th { text-align: left; padding: 7px 10px; background: var(--surface-2); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); border-bottom: 1px solid var(--line); }
-  table.lineitems td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
-  table.lineitems tr:last-child td { border-bottom: none; }
-  .bucket-tag { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+  .detail-row.closed { display: none; }
+  .detail-row td { padding: 0; }
+  .detail-wrap { padding: 14px 18px 18px 40px; background: #FAFBFC; }
+  .detail-grid { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 8px 18px; margin-bottom: 14px; }
+  .detail-field .k { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint); }
+  .detail-field .v { font-size: 12.5px; color: var(--ink); margin-top: 1px; }
+  .detail-note { font-size: 12px; color: var(--ink-soft); margin: 8px 0 14px; padding: 8px 10px; background: var(--bg-panel); border: 1px solid var(--grid); border-radius: var(--radius); }
+  .section-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin: 0 0 6px; }
+  table.lineitems { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--bg-panel); border: 1px solid var(--grid); }
+  table.lineitems th, table.lineitems td { border: 1px solid var(--grid); padding: 5px 9px; }
+  table.lineitems th { text-align: left; background: var(--bg-head); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-faint); }
+  .bucket-tag { font-size: 9.5px; padding: 1px 6px; border-radius: 999px; font-weight: 700; }
   .bucket-LABOR { background: var(--good-bg); color: var(--good); }
   .bucket-EXPENSE { background: var(--watch-bg); color: var(--watch); }
-  .bucket-SUB { background: var(--nodata-bg); color: var(--nodata); }
+  .bucket-SUB { background: var(--pending-bg); color: var(--pending); }
 
-  /* ---------- empty / helper text ---------- */
-  .empty-hint { padding: 60px 20px; text-align: center; color: var(--ink-faint); font-size: 13.5px; }
+  .job-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .job-chart-card { background: var(--bg-panel); border: 1px solid var(--grid); border-radius: var(--radius); padding: 10px 12px; }
+  .job-chart-card canvas { max-height: 160px; }
+  .chart-empty { font-size: 11.5px; color: var(--ink-faint); padding: 30px 10px; text-align: center; }
+
+  .empty-hint { padding: 50px 20px; text-align: center; color: var(--ink-faint); font-size: 13px; }
 
   /* ---------- opportunity map ---------- */
-  .map-panel { padding: 20px; }
-  .map-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
-  .map-head h3 { font-family: var(--font-display); font-size: 17px; margin: 0; }
-  .map-head p { margin: 2px 0 0; color: var(--ink-soft); font-size: 12.5px; }
-  .map-canvas-wrap { position: relative; margin-top: 14px; height: 480px; }
-  .quad-label {
-    position: absolute;
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    pointer-events: none;
-    max-width: 180px;
-    line-height: 1.35;
-  }
-  .quad-tl { top: 44px; left: 60px; }
-  .quad-tr { top: 44px; right: 12px; text-align: right; }
-  .quad-bl { bottom: 34px; left: 60px; }
-  .quad-br { bottom: 34px; right: 12px; text-align: right; }
+  .map-panel { padding: 16px; }
+  .map-head h3 { font-size: 15px; margin: 0 0 2px; }
+  .map-head p { margin: 0; color: var(--ink-soft); font-size: 12px; }
+  .map-canvas-wrap { position: relative; margin-top: 12px; height: 460px; }
+  .quad-label { position: absolute; font-size: 10px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-faint); pointer-events: none; max-width: 170px; line-height: 1.3; }
+  .quad-tl { top: 40px; left: 56px; }
+  .quad-tr { top: 40px; right: 10px; text-align: right; }
+  .quad-bl { bottom: 30px; left: 56px; }
+  .quad-br { bottom: 30px; right: 10px; text-align: right; }
+  .map-scale-note { font-size: 11px; color: var(--ink-faint); margin: 10px 2px 0; }
+  .topbudget-canvas-wrap { position: relative; margin-top: 10px; height: 380px; }
 
   /* ---------- trend view ---------- */
-  .trend-panel { padding: 20px; }
-  .trend-empty { text-align: center; padding: 50px 20px; color: var(--ink-faint); }
-  table.snapshots { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.snapshots th { text-align: left; padding: 9px 12px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); background: var(--surface-2); }
-  table.snapshots td { padding: 9px 12px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); }
-  table.snapshots tr:last-child td { border-bottom: none; }
+  .trend-panel { padding: 16px; }
+  .trend-empty { text-align: center; padding: 44px 20px; color: var(--ink-faint); }
+  .trend-chart-wrap { height: 280px; margin-bottom: 18px; }
+  table.snapshots { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.snapshots th, table.snapshots td { border: 1px solid var(--grid); padding: 6px 10px; }
+  table.snapshots th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); background: var(--bg-head); }
 
-  /* ---------- footer / legend ---------- */
-  .legend {
-    max-width: 1400px;
-    margin: 18px auto 40px;
-    padding: 0 22px;
-    color: var(--ink-faint);
-    font-size: 12px;
-  }
-  .legend details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; }
-  .legend summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); font-size: 12.5px; }
-  .legend .legend-body { margin-top: 10px; line-height: 1.6; }
-  .legend .legend-body b { color: var(--ink); }
-  .legend code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
-
-  .footer-row {
-    max-width: 1400px;
-    margin: 0 auto 40px;
-    padding: 0 22px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
+  /* ---------- legend / footer ---------- */
+  .legend-row { padding: 6px 16px 0; }
+  .legend-row .btn { font-size: 12px; }
+  .footer-row { padding: 10px 16px 34px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .footer-row .danger-btn { color: var(--bad); border-color: var(--bad-line); }
   .footer-row .danger-btn:hover { background: var(--bad-bg); }
-  .version-tag { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  .version-tag { font-size: 11px; color: var(--ink-faint); }
 
-  @media (prefers-reduced-motion: reduce) {
-    * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
-  }
+  /* ---------- modal ---------- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,32,0.45); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal-card { background: var(--bg-panel); border-radius: 8px; max-width: 980px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,0.25); }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--grid-strong); background: var(--bg-head); border-radius: 8px 8px 0 0; }
+  .modal-head h2 { font-size: 16px; margin: 0; }
+  .modal-close { appearance: none; border: none; background: transparent; font-size: 20px; cursor: pointer; color: var(--ink-soft); line-height: 1; padding: 2px 6px; }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 18px 20px 22px; }
+  .modal-body p { font-size: 12.5px; color: var(--ink-soft); }
+  .review-notes { background: var(--brass-bg); border: 1px solid var(--brass); border-radius: var(--radius); padding: 12px 14px; margin: 14px 0 18px; font-size: 12.5px; }
+  .review-notes h4 { margin: 0 0 8px; font-size: 12.5px; color: var(--brass-dark); }
+  .review-notes ul { margin: 0; padding-left: 18px; }
+  .review-notes li { margin-bottom: 6px; }
+  table.glossary { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.glossary th, table.glossary td { border: 1px solid var(--grid); padding: 8px 10px; vertical-align: top; text-align: left; }
+  table.glossary th { background: var(--bg-head); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); }
+  table.glossary td.term { font-weight: 700; white-space: nowrap; }
+  table.glossary td.example { color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.001s !important; } }
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="brand">
-      <span class="mark">&#9875; Exec Summary Tracker</span>
-      <span class="tag">multiplier &middot; budget &middot; trend</span>
-    </div>
-    <div class="topbar-actions">
-      <div class="file-meta" id="fileMeta"></div>
-      <button class="btn btn-ghost-dark btn-sm" id="exportHistoryBtn" title="Download your trend history as a backup file">Export history</button>
-      <button class="btn btn-ghost-dark btn-sm" id="importHistoryBtn" title="Restore trend history from a backup file">Import history</button>
+<div class="brandstrip"><div class="wrap"><span class="mark">&#9875; Exec Summary Tracker</span><span class="tag">multiplier &middot; budget &middot; trend</span></div></div>
+
+<div class="toolbar">
+  <div class="wrap">
+    <div class="file-meta" id="fileMeta"></div>
+    <div class="toolbar-actions">
+      <button class="btn" id="definitionsBtn">Key Definitions</button>
+      <button class="btn" id="exportHistoryBtn">Export history</button>
+      <button class="btn" id="importHistoryBtn">Import history</button>
       <input type="file" id="importHistoryInput" accept="application/json">
-      <button class="btn btn-brass" id="loadBtn">Load export &#8593;</button>
+      <button class="btn btn-primary" id="loadBtn">Load export &#8593;</button>
       <input type="file" id="fileInput" accept=".xlsx,.xlsm">
     </div>
   </div>
-</header>
+</div>
 
-<div class="dropzone" id="dropzoneWrap">
-  <div class="dropzone-card" id="dropzoneCard">
-    <h2>Drop this week's Power BI export here</h2>
-    <p>Or use "Load export" above. Works with the Executive Summary .xlsx export, unmodified.</p>
-    <button class="btn btn-brass" id="dropzoneBtn">Choose file&hellip;</button>
-    <div class="privacy-note">Everything runs in your browser. Your file and numbers never leave this device.</div>
+<div class="wrap">
+  <div class="dropzone" id="dropzoneWrap">
+    <div class="dropzone-card" id="dropzoneCard">
+      <h2>Drop this week's Power BI export here</h2>
+      <p>Or use "Load export" above. Works with the Executive Summary .xlsx export, unmodified.</p>
+      <button class="btn btn-primary" id="dropzoneBtn">Choose file&hellip;</button>
+      <div class="privacy-note">Everything runs in your browser. Your file and numbers never leave this device.</div>
+    </div>
   </div>
 </div>
 
 <div class="dashboard" id="dashboard" style="display:none;"></div>
 
-<div class="toolbar" id="toolbar" style="display:none;">
+<div class="subtoolbar" id="toolbar" style="display:none;">
   <div class="switcher" id="viewSwitcher">
     <button data-view="table" class="active">Table</button>
     <button data-view="map">Opportunity Map</button>
     <button data-view="trend">Trend</button>
   </div>
-  <div class="search-wrap">
-    <input class="search-input" id="searchInput" type="text" placeholder="Filter by project, client, or manager&hellip;">
-  </div>
+  <input class="search-input" id="searchInput" type="text" placeholder="Filter by project, client, or manager&hellip;">
 </div>
 
 <main id="mainArea" style="display:none;">
   <div class="panel" id="tableView">
     <div class="table-scroll">
-      <table class="data">
+      <table class="data" id="dataTable">
+        <colgroup id="colGroup"></colgroup>
         <thead><tr id="tableHead"></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -509,10 +298,8 @@
 
   <div class="panel map-panel" id="mapView" style="display:none;">
     <div class="map-head">
-      <div>
-        <h3>Opportunity Map</h3>
-        <p>Multiplier performance vs. accessible budget remaining &mdash; the top-right is where extra hours do the most good.</p>
-      </div>
+      <h3>Opportunity Map</h3>
+      <p>Multiplier performance vs. accessible budget remaining. Gray/dashed points don't have enough billed activity yet to read reliably.</p>
     </div>
     <div class="map-canvas-wrap">
       <div class="quad-label quad-tl">Underperforming<br>&middot; has budget room</div>
@@ -521,6 +308,15 @@
       <div class="quad-label quad-br">Thriving<br>&middot; budget is tight</div>
       <canvas id="mapCanvas"></canvas>
     </div>
+    <p class="map-scale-note">Vertical axis uses a compressed scale (each gridline is roughly 10&times; the one below it) so the handful of very large jobs don't flatten everyone else to the bottom &mdash; hover any point for its real number.</p>
+  </div>
+
+  <div class="panel map-panel" id="topBudgetPanel" style="display:none; margin-top:14px;">
+    <div class="map-head">
+      <h3>Most Accessible Budget, Ranked</h3>
+      <p>The same "room to add hours" number as a straight list &mdash; sometimes more useful than the map above.</p>
+    </div>
+    <div class="topbudget-canvas-wrap"><canvas id="topBudgetCanvas"></canvas></div>
   </div>
 
   <div class="panel trend-panel" id="trendView" style="display:none;">
@@ -528,38 +324,60 @@
   </div>
 </main>
 
-<div class="legend" id="legendWrap" style="display:none;">
-  <details>
-    <summary>How status and budget-remaining are calculated</summary>
-    <div class="legend-body">
-      <p><b>Status</b> combines two signals and shows the worse of the two: <b>Multiplier Variance</b> (actual PTD multiplier minus goal &mdash; red below <code>-0.30</code>, yellow below <code>0</code>, green at or above goal) and <b>WIP</b> (red if positive/unbilled, green if negative, yellow at exactly zero). A job sitting right on its goal multiplier but carrying a large positive WIP will show red, since unbilled revenue is a real risk even when the multiplier looks fine.</p>
-      <p><b>Labor / Expense / Accessible Remaining</b> come from the individual task lines under each project (not shown in the summary export you're used to). Each task line is classified by name: lines starting with <b>"Sub"</b> are subcontractor budgets &mdash; fixed price, not reallocatable, excluded from "accessible." Lines with <b>"Expense"</b> in the name go to the Expense bucket. Everything else (Labor, Project Management, processing/QC/reporting task lines, markups) defaults to the Labor bucket. Remaining = that bucket's total budgeted Fee minus its cost booked to date. Click any row to see the exact task-line breakdown and check the classification yourself.</p>
-      <p>A/R Balance is shown as its own sortable column rather than folded into status, since a comfortable receivables balance depends on your own collections norms &mdash; there's no one-size threshold built in.</p>
-      <p>Trend history is stored only in this browser (nothing is uploaded anywhere). Use Export/Import history to move it to another computer or keep a backup.</p>
-    </div>
-  </details>
+<div class="legend-row" id="legendWrap" style="display:none;">
+  <button class="btn" id="legendBtn">How status is calculated</button>
 </div>
 
 <div class="footer-row" id="footerRow" style="display:none;">
   <span class="version-tag">Exec Summary Tracker &middot; runs entirely client-side</span>
-  <button class="btn btn-ghost btn-sm danger-btn" id="clearDataBtn">Clear all data in this browser</button>
+  <button class="btn danger-btn" id="clearDataBtn">Clear all data in this browser</button>
+</div>
+
+<!-- ===== Definitions modal ===== -->
+<div class="modal-overlay" id="definitionsModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>Key Definitions</h2><button class="modal-close" id="closeDefinitions">&times;</button></div>
+    <div class="modal-body">
+      <p><b>SOP: Accessing Financial and Project Reports in Power BI and F&amp;O</b> &mdash; your team's glossary, reproduced here for quick reference.</p>
+      <div class="review-notes">
+        <h4>How this lines up with the app (reviewed against your real export)</h4>
+        <ul>
+          <li><b>Revenue = Net Revenue + Expenses</b> checks out exactly &mdash; I verified it against the "Goal VAR PTD" column in your export and they reconcile to within a few cents on every project.</li>
+          <li><b>WIP</b> your example describes two readings: "billing position" vs. "budget remaining." This app uses the billing-position reading (Revenue &minus; Invoiced), matching what you described when we set up the status colors. Worth a quick gut-check with your team that this is the one everyone means day to day.</li>
+          <li><b>Subs and ODCs</b> bundles subcontractor cost with direct expenses in the raw export. This app splits those apart at the task-line level (Sub budgets vs. Expense budgets), since subcontractor money isn't yours to reallocate the way expense underspend is &mdash; see Labor/Expense Remaining in the table.</li>
+        </ul>
+      </div>
+      <table class="glossary">
+        <thead><tr><th>Term</th><th>Definition</th><th>Simple Example</th></tr></thead>
+        <tbody id="glossaryBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Status legend modal ===== -->
+<div class="modal-overlay" id="legendModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>How status is calculated</h2><button class="modal-close" id="closeLegend">&times;</button></div>
+    <div class="modal-body">
+      <p><b>Status</b> combines two signals and shows the worse of the two: <b>Multiplier Variance</b> (actual PTD multiplier minus goal &mdash; red below -0.30, yellow below 0, green at or above goal) and <b>WIP</b> (red above $1,000 unbilled, green below -$1,000, yellow in between). A job sitting right on its goal multiplier but carrying a large positive WIP will show red, since unbilled revenue is a real risk even when the multiplier looks fine.</p>
+      <p><b>Pending</b> (dashed gray) means revenue booked so far is under 2% of the project's total Fee &mdash; not enough billed activity yet to judge fairly. This covers the case where a second survey round hasn't been invoiced, hours haven't landed, or a subcontractor hasn't billed you yet. These are held out of the Green/Watch/Under Goal counts rather than defaulted to a color that might not mean anything yet.</p>
+      <p><b>Labor / Expense / Accessible Remaining</b> come from the individual task lines under each project. Lines starting with "Sub" are subcontractor budgets &mdash; fixed price, not reallocatable, excluded from "accessible." Lines with "Expense" in the name go to the Expense bucket. Everything else defaults to Labor. Remaining = that bucket's budgeted Fee minus cost booked to date. Click any row to see the exact breakdown.</p>
+      <p><b>A/R Balance</b> is shown as its own sortable column rather than folded into status, since what counts as concerning A/R depends on your own collections norms.</p>
+      <p>Trend history is stored only in this browser (nothing is uploaded anywhere). Use Export/Import history to move it to another computer or keep a backup.</p>
+    </div>
+  </div>
 </div>
 
 <script>
 "use strict";
 
 /* =========================================================
-   CORE PARSING (validated against a real 108-project export
-   -- see build notes. Leaf-based detail-line rollup handles
-   any nesting depth; Fee and Total Cost reconcile exactly to
-   each project's summary row.)
+   CORE PARSING (unchanged from prior validation -- leaf-based
+   detail-line rollup, Sub/Labor/Expense classification)
    ========================================================= */
 
-function cleanText(v) {
-  if (v === null || v === undefined) return "";
-  return String(v).trim();
-}
-
+function cleanText(v) { if (v === null || v === undefined) return ""; return String(v).trim(); }
 function asNumber(v) {
   if (v === null || v === undefined || v === "") return null;
   if (typeof v === "number") return v;
@@ -569,10 +387,8 @@ function asNumber(v) {
   var n = parseFloat(txt);
   return isNaN(n) ? null : n;
 }
-
 var PARENT_RE = /^\d+\.\d{2}$/;
 var DETAIL_RE = /^\d+\.\d{2}(\.\d{3})+$/;
-
 function isParentId(v) {
   var t = cleanText(v);
   if (!t) return false;
@@ -580,21 +396,13 @@ function isParentId(v) {
   if (t.toLowerCase().indexOf("etrac_") === 0) return true;
   return false;
 }
-
 function classifyLine(name) {
   var n = (name || "").toLowerCase().trim();
   if (n.indexOf("sub") === 0) return "SUB";
   if (n.indexOf("expense") !== -1) return "EXPENSE";
   return "LABOR";
 }
-
-function cell(rows, r, c) {
-  var row = rows[r - 1];
-  if (!row) return null;
-  var v = row[c - 1];
-  return v === undefined ? null : v;
-}
-
+function cell(rows, r, c) { var row = rows[r - 1]; if (!row) return null; var v = row[c - 1]; return v === undefined ? null : v; }
 function findNextNoteRow(rows, startRow) {
   var mr = rows.length;
   for (var r = startRow + 1; r <= mr; r++) {
@@ -604,13 +412,9 @@ function findNextNoteRow(rows, startRow) {
   }
   return null;
 }
-
 function parseExport(rows) {
   var mr = rows.length;
-  var records = [];
-  var skippedBlocks = [];
-  var seen = {};
-
+  var records = [], skippedBlocks = [], seen = {};
   for (var r = 1; r <= mr; r++) {
     var projectId = cleanText(cell(rows, r, 1));
     var projectName = cleanText(cell(rows, r, 5));
@@ -618,20 +422,14 @@ function parseExport(rows) {
     if (!projectName || projectName.toLowerCase() === "name") continue;
     if (seen[projectId]) continue;
     seen[projectId] = true;
-
     var noteRow = findNextNoteRow(rows, r);
-    if (!noteRow) {
-      skippedBlocks.push({ projectId: projectId, projectName: projectName });
-      continue;
-    }
+    if (!noteRow) { skippedBlocks.push({ projectId: projectId, projectName: projectName }); continue; }
     var summaryRow = noteRow - 1;
-
     var clientName = cleanText(cell(rows, r, 10));
     var projectManager = cleanText(cell(rows, r, 7));
     var actualStart = cell(rows, r, 14);
     var estCompletion = cell(rows, r, 16);
     var projectStatus = cleanText(cell(rows, r, 29));
-
     var feeContract = asNumber(cell(rows, summaryRow, 11));
     var revenue = asNumber(cell(rows, summaryRow, 12));
     var ptdEffMult = asNumber(cell(rows, summaryRow, 17));
@@ -639,21 +437,17 @@ function parseExport(rows) {
     var laborCost = asNumber(cell(rows, summaryRow, 20));
     var expense = asNumber(cell(rows, summaryRow, 21));
     var billed = asNumber(cell(rows, summaryRow, 26));
-
     var noteRaw = cleanText(cell(rows, noteRow, 1));
     var projectNote = noteRaw.indexOf("Project Note") === 0 ? noteRaw : "";
     var goalMultiplier = asNumber(cell(rows, noteRow, 17));
     var billMultiplier = asNumber(cell(rows, noteRow, 20));
     var lastInvoicedDate = cell(rows, noteRow, 22);
     var arBalance = asNumber(cell(rows, noteRow, 29));
-
     var revMinusExpense = null;
     if (revenue !== null && expense !== null) revMinusExpense = revenue - expense;
     if (ptdEffMult === null && revenue !== null && laborCost) ptdEffMult = revenue / laborCost;
-
     var multiplierVariance = null;
     if (ptdEffMult !== null && goalMultiplier !== null) multiplierVariance = ptdEffMult - goalMultiplier;
-
     if (wip === null && revenue !== null && billed !== null) wip = revenue - billed;
 
     var detailIds = [];
@@ -661,17 +455,11 @@ function parseExport(rows) {
       var idv = cleanText(cell(rows, dr, 1));
       if (DETAIL_RE.test(idv)) detailIds.push({ id: idv, row: dr });
     }
-
-    var laborFee = 0, laborCostToDate = 0;
-    var expenseFee = 0, expenseCostToDate = 0;
-    var subFee = 0, subCostToDate = 0;
+    var laborFee = 0, laborCostToDate = 0, expenseFee = 0, expenseCostToDate = 0, subFee = 0, subCostToDate = 0;
     var lineItems = [];
-
     detailIds.forEach(function (d) {
       var prefix = d.id + ".";
-      var isLeaf = !detailIds.some(function (other) {
-        return other.id !== d.id && other.id.indexOf(prefix) === 0;
-      });
+      var isLeaf = !detailIds.some(function (other) { return other.id !== d.id && other.id.indexOf(prefix) === 0; });
       if (!isLeaf) return;
       var name = cleanText(cell(rows, d.row, 5));
       var fee = asNumber(cell(rows, d.row, 11)) || 0;
@@ -682,7 +470,6 @@ function parseExport(rows) {
       else if (bucket === "EXPENSE") { expenseFee += fee; expenseCostToDate += totalCost; }
       else { subFee += fee; subCostToDate += totalCost; }
     });
-
     var laborRemaining = laborFee - laborCostToDate;
     var expenseRemaining = expenseFee - expenseCostToDate;
     var accessibleRemaining = laborRemaining + expenseRemaining;
@@ -706,15 +493,22 @@ function parseExport(rows) {
 }
 
 /* =========================================================
-   STATUS LOGIC
+   STATUS LOGIC (refined: WIP materiality floor + pending tier)
    ========================================================= */
 
 var VARIANCE_RED_BELOW = -0.30;
 var VARIANCE_YELLOW_BELOW = 0.0;
-var WIP_RED_ABOVE = 0.0;
-var WIP_GREEN_BELOW = 0.0;
+var WIP_RED_ABOVE = 1000;
+var WIP_GREEN_BELOW = -1000;
+var PENDING_REVENUE_RATIO = 0.02;
 var STATUS_RANK = { red: 3, yellow: 2, green: 1, nodata: 0 };
+var STATUS_SORT_RANK = { red: 0, yellow: 1, pending: 2, green: 3 };
 
+function isPendingData(rec) {
+  if (!rec.feeContract || rec.feeContract <= 0) return false;
+  var rev = rec.revenue || 0;
+  return (rev / rec.feeContract) < PENDING_REVENUE_RATIO;
+}
 function multiplierStatus(rec) {
   var v = rec.multiplierVariance;
   if (v === null) return "nodata";
@@ -730,12 +524,22 @@ function wipStatus(rec) {
   return "yellow";
 }
 function combinedStatus(rec) {
+  if (isPendingData(rec)) return "pending";
   var a = multiplierStatus(rec), b = wipStatus(rec);
+  if (a === "nodata" && b === "nodata") return "pending";
   if (a === "nodata") return b;
   if (b === "nodata") return a;
   return STATUS_RANK[a] >= STATUS_RANK[b] ? a : b;
 }
-var STATUS_HEX = { red: "#AA352A", yellow: "#93650A", green: "#1F7A4D", nodata: "#7C8CA0" };
+var STATUS_HEX = { red: "#A93A2E", yellow: "#92650B", green: "#1F7A4D", pending: "#566779" };
+var STATUS_LABEL = { red: "Under goal", yellow: "Watch", green: "On goal", pending: "Pending data" };
+
+function refreshComputedFields(records) {
+  records.forEach(function (r) {
+    r._status = combinedStatus(r);
+    r._statusRank = STATUS_SORT_RANK[r._status];
+  });
+}
 
 /* =========================================================
    HISTORY / TREND (localStorage, per-browser)
@@ -746,18 +550,10 @@ var PORTFOLIO_HISTORY_KEY = "execTracker.portfolioHistory.v1";
 var LAST_DATASET_KEY = "execTracker.lastDataset.v1";
 var HISTORY_WEEKS_KEPT = 60;
 
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; } catch (e) { return {}; }
-}
-function saveHistory(h) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
-}
-function loadPortfolioHistory() {
-  try { return JSON.parse(localStorage.getItem(PORTFOLIO_HISTORY_KEY)) || []; } catch (e) { return []; }
-}
-function savePortfolioHistory(list) {
-  try { localStorage.setItem(PORTFOLIO_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
-}
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; } catch (e) { return {}; } }
+function saveHistory(h) { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {} }
+function loadPortfolioHistory() { try { return JSON.parse(localStorage.getItem(PORTFOLIO_HISTORY_KEY)) || []; } catch (e) { return []; } }
+function savePortfolioHistory(list) { try { localStorage.setItem(PORTFOLIO_HISTORY_KEY, JSON.stringify(list)); } catch (e) {} }
 
 function updateHistory(history, records, snapshotDate) {
   records.forEach(function (rec) {
@@ -772,12 +568,9 @@ function updateHistory(history, records, snapshotDate) {
     history[pid] = history[pid].filter(function (e) { return e.date !== snapshotDate; });
     history[pid].push(entry);
     history[pid].sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    if (history[pid].length > HISTORY_WEEKS_KEPT) {
-      history[pid] = history[pid].slice(history[pid].length - HISTORY_WEEKS_KEPT);
-    }
+    if (history[pid].length > HISTORY_WEEKS_KEPT) history[pid] = history[pid].slice(history[pid].length - HISTORY_WEEKS_KEPT);
   });
 }
-
 function computeTrend(history, projectId, currentVariance, snapshotDate) {
   var entries = (history[projectId] || []).filter(function (e) { return e.date !== snapshotDate; });
   if (!entries.length) return { text: "New", delta: null };
@@ -789,7 +582,6 @@ function computeTrend(history, projectId, currentVariance, snapshotDate) {
   var sign = delta > 0 ? "+" : "";
   return { text: (delta > 0 ? "\u25B2 " : "\u25BC ") + sign + delta.toFixed(2), delta: delta };
 }
-
 function applyTrends(history, records, snapshotDate) {
   records.forEach(function (rec) {
     var t = computeTrend(history, rec.projectId, rec.multiplierVariance, snapshotDate);
@@ -812,17 +604,11 @@ function fmtMoney2(n) {
   var sign = n < 0 ? "-" : "";
   return sign + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function fmtMult(n) {
-  if (n === null || n === undefined || isNaN(n)) return "\u2014";
-  return (n >= 0 ? "" : "") + n.toFixed(2);
-}
+function fmtMult(n) { if (n === null || n === undefined || isNaN(n)) return "\u2014"; return n.toFixed(2); }
 function fmtDate(v) {
   if (!v) return "\u2014";
   var d = (v instanceof Date) ? v : null;
-  if (!d) {
-    var parsed = new Date(v);
-    if (!isNaN(parsed.getTime())) d = parsed; else return String(v);
-  }
+  if (!d) { var parsed = new Date(v); if (!isNaN(parsed.getTime())) d = parsed; else return String(v); }
   if (d.getFullYear() < 1901) return "\u2014";
   return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
 }
@@ -833,52 +619,51 @@ function esc(s) {
 }
 
 /* =========================================================
-   APP STATE + RENDER
+   APP STATE
    ========================================================= */
 
 var state = {
-  records: [],
-  skippedBlocks: [],
-  snapshotDate: null,
-  fileName: null,
-  history: loadHistory(),
-  sortColumn: "multiplierVariance",
-  sortAscending: true,
-  view: "table",
-  expanded: {},
-  search: "",
-  mapChart: null,
+  records: [], skippedBlocks: [], snapshotDate: null, fileName: null,
+  history: loadHistory(), sortColumn: "multiplierVariance", sortAscending: true,
+  view: "table", expanded: {}, search: "", mapChart: null, topBudgetChart: null, trendChart: null,
+  detailCharts: {},
 };
 
 var COLUMNS = [
-  { key: "status", label: "Status", sortable: false },
-  { key: "projectName", label: "Project", sortable: true },
-  { key: "projectManager", label: "Manager", sortable: true },
-  { key: "ptdEffMultiplier", label: "PTD Mult", sortable: true, num: true },
-  { key: "goalMultiplier", label: "Goal", sortable: true, num: true },
-  { key: "multiplierVariance", label: "Variance", sortable: true, num: true },
-  { key: "trendDelta", label: "Trend", sortable: true, num: true },
-  { key: "wip", label: "WIP", sortable: true, num: true },
-  { key: "arBalance", label: "A/R", sortable: true, num: true },
-  { key: "laborRemaining", label: "Labor Left", sortable: true, num: true },
-  { key: "expenseRemaining", label: "Expense Left", sortable: true, num: true },
-  { key: "accessibleRemaining", label: "Accessible", sortable: true, num: true },
-  { key: "revenue", label: "Revenue", sortable: true, num: true },
-  { key: "expand", label: "", sortable: false },
+  { key: "status", label: "Status", sortable: true, width: 118 },
+  { key: "projectName", label: "Project", sortable: true, width: 300 },
+  { key: "projectManager", label: "Manager", sortable: true, width: 130 },
+  { key: "projectStatus", label: "Stage", sortable: true, width: 104 },
+  { key: "ptdEffMultiplier", label: "PTD Mult", sortable: true, num: true, width: 82 },
+  { key: "goalMultiplier", label: "Goal", sortable: true, num: true, width: 72 },
+  { key: "multiplierVariance", label: "Variance", sortable: true, num: true, width: 84 },
+  { key: "trendDelta", label: "Trend", sortable: true, num: true, width: 96 },
+  { key: "wip", label: "WIP", sortable: true, num: true, width: 104 },
+  { key: "arBalance", label: "A/R", sortable: true, num: true, width: 96 },
+  { key: "laborRemaining", label: "Labor Left", sortable: true, num: true, width: 106 },
+  { key: "expenseRemaining", label: "Expense Left", sortable: true, num: true, width: 112 },
+  { key: "accessibleRemaining", label: "Accessible", sortable: true, num: true, width: 112 },
+  { key: "feeContract", label: "Fee", sortable: true, num: true, width: 110 },
+  { key: "revenue", label: "Revenue", sortable: true, num: true, width: 106 },
+  { key: "invoiced", label: "Invoiced", sortable: true, num: true, width: 100 },
+  { key: "subFee", label: "Sub Fee", sortable: true, num: true, width: 100 },
+  { key: "lastInvoicedDate", label: "Last Invoice", sortable: true, width: 104 },
+  { key: "expand", label: "", sortable: false, width: 34 },
 ];
+var SORT_FIELD_OVERRIDES = { status: "_statusRank" };
 
 function sortRecords(records, column, ascending) {
-  var withVal = records.filter(function (r) { return r[column] !== null && r[column] !== undefined; });
-  var withoutVal = records.filter(function (r) { return r[column] === null || r[column] === undefined; });
+  var field = SORT_FIELD_OVERRIDES[column] || column;
+  var withVal = records.filter(function (r) { return r[field] !== null && r[field] !== undefined; });
+  var withoutVal = records.filter(function (r) { return r[field] === null || r[field] === undefined; });
   withVal.sort(function (a, b) {
-    var av = a[column], bv = b[column];
+    var av = a[field], bv = b[field];
     if (av < bv) return ascending ? -1 : 1;
     if (av > bv) return ascending ? 1 : -1;
     return 0;
   });
   return withVal.concat(withoutVal);
 }
-
 function filteredRecords() {
   var q = state.search.trim().toLowerCase();
   var records = state.records;
@@ -892,19 +677,22 @@ function filteredRecords() {
   }
   return sortRecords(records, state.sortColumn, state.sortAscending);
 }
-
 function computeDashboard(records) {
-  var red = 0, yellow = 0, green = 0;
+  var red = 0, yellow = 0, green = 0, pending = 0;
   var totalRevenue = 0, totalWip = 0, totalAccessible = 0;
   records.forEach(function (r) {
-    var s = combinedStatus(r);
-    if (s === "red") red++; else if (s === "yellow") yellow++; else if (s === "green") green++;
+    var s = r._status || combinedStatus(r);
+    if (s === "red") red++; else if (s === "yellow") yellow++; else if (s === "green") green++; else if (s === "pending") pending++;
     totalRevenue += r.revenue || 0;
     totalWip += r.wip || 0;
     totalAccessible += r.accessibleRemaining || 0;
   });
-  return { total: records.length, red: red, yellow: yellow, green: green, totalRevenue: totalRevenue, totalWip: totalWip, totalAccessible: totalAccessible };
+  return { total: records.length, red: red, yellow: yellow, green: green, pending: pending, totalRevenue: totalRevenue, totalWip: totalWip, totalAccessible: totalAccessible };
 }
+
+/* =========================================================
+   RENDER: dashboard
+   ========================================================= */
 
 function renderDashboard() {
   var d = computeDashboard(state.records);
@@ -914,6 +702,7 @@ function renderDashboard() {
     card("On / Above Goal", d.green, "c-good"),
     card("Watch", d.yellow, "c-watch"),
     card("Under Goal / WIP Risk", d.red, "c-bad"),
+    card("Pending Data", d.pending, "c-pending"),
     card("Total Revenue", fmtMoney(d.totalRevenue), "c-brass"),
     card("Accessible Remaining", fmtMoney(d.totalAccessible), "c-brass"),
   ].join("");
@@ -922,32 +711,94 @@ function renderDashboard() {
     return '<div class="stat-card ' + cls + '"><p class="stat-label">' + esc(label) + '</p><p class="stat-value">' + esc(value) + "</p></div>";
   }
 }
-
 function statusPill(status) {
-  var labelMap = { red: "Under goal", yellow: "Watch", green: "On goal", nodata: "No data" };
-  return '<span class="status-pill status-' + status + '"><span class="dot"></span>' + labelMap[status] + "</span>";
+  return '<span class="status-pill status-' + status + '"><span class="dot"></span>' + STATUS_LABEL[status] + "</span>";
+}
+
+/* =========================================================
+   RENDER: table (colgroup, resizable, sortable)
+   ========================================================= */
+
+function renderColGroup() {
+  var totalWidth = 0;
+  document.getElementById("colGroup").innerHTML = COLUMNS.map(function (c) {
+    totalWidth += c.width;
+    return '<col style="width:' + c.width + 'px">';
+  }).join("");
+  document.getElementById("dataTable").style.width = totalWidth + "px";
+}
+
+function updateTableWidth() {
+  var total = 0;
+  Array.prototype.forEach.call(document.querySelectorAll("#colGroup col"), function (c) {
+    total += c.getBoundingClientRect().width;
+  });
+  document.getElementById("dataTable").style.width = total + "px";
 }
 
 function renderTableHead() {
   var tr = document.getElementById("tableHead");
-  tr.innerHTML = COLUMNS.map(function (c) {
-    if (!c.sortable) return "<th>" + esc(c.label) + "</th>";
-    var sorted = state.sortColumn === c.key;
-    var arrow = sorted ? (state.sortAscending ? "\u25B2" : "\u25BC") : "\u25B2";
-    return '<th data-col="' + c.key + '" class="' + (sorted ? "sorted" : "") + '">' + esc(c.label) + ' <span class="arrow">' + arrow + "</span></th>";
+  tr.innerHTML = COLUMNS.map(function (c, idx) {
+    var inner;
+    if (!c.sortable) {
+      inner = "";
+    } else {
+      var sorted = state.sortColumn === c.key;
+      var arrow = sorted ? (state.sortAscending ? "\u25B2" : "\u25BC") : "\u25B2";
+      inner = '<span class="th-label" data-col="' + c.key + '">' + esc(c.label) + ' <span class="arrow">' + arrow + "</span></span>";
+    }
+    var sortedClass = state.sortColumn === c.key ? " sorted" : "";
+    return '<th class="' + sortedClass + '">' + inner + '<span class="resizer" data-idx="' + idx + '"></span></th>';
   }).join("");
-  Array.prototype.forEach.call(tr.querySelectorAll("th[data-col]"), function (th) {
-    th.addEventListener("click", function () {
-      var col = th.getAttribute("data-col");
+
+  Array.prototype.forEach.call(tr.querySelectorAll(".th-label"), function (label) {
+    label.addEventListener("click", function () {
+      var col = label.getAttribute("data-col");
       if (state.sortColumn === col) state.sortAscending = !state.sortAscending;
       else { state.sortColumn = col; state.sortAscending = true; }
       renderTableHead();
       renderTableBody();
     });
   });
+  initResizers();
+}
+
+function initResizers() {
+  Array.prototype.forEach.call(document.querySelectorAll(".resizer"), function (handle) {
+    handle.addEventListener("mousedown", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var idx = parseInt(handle.getAttribute("data-idx"), 10);
+      var cols = document.querySelectorAll("#colGroup col");
+      var col = cols[idx];
+      var startX = e.clientX;
+      var startWidth = col.getBoundingClientRect().width;
+      handle.classList.add("active");
+      function onMove(ev) {
+        var newWidth = Math.max(40, startWidth + (ev.clientX - startX));
+        col.style.width = newWidth + "px";
+        updateTableWidth();
+      }
+      function onUp() {
+        handle.classList.remove("active");
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+  });
+}
+
+function destroyDetailCharts() {
+  Object.keys(state.detailCharts).forEach(function (k) {
+    try { state.detailCharts[k].destroy(); } catch (e) {}
+  });
+  state.detailCharts = {};
 }
 
 function renderTableBody() {
+  destroyDetailCharts();
   var records = filteredRecords();
   var body = document.getElementById("tableBody");
   if (!records.length) {
@@ -956,27 +807,31 @@ function renderTableBody() {
   }
   var html = "";
   records.forEach(function (r) {
-    var status = combinedStatus(r);
+    var status = r._status || combinedStatus(r);
     var trendCls = r.trendDelta === null ? "trend-new" : (r.trendDelta > 0 ? "trend-up" : (r.trendDelta < 0 ? "trend-down" : "trend-flat"));
-    var rowId = "row_" + r.projectId.replace(/\W/g, "_");
     var isOpen = !!state.expanded[r.projectId];
     html += '<tr class="data-row' + (isOpen ? " expanded" : "") + '" data-pid="' + esc(r.projectId) + '">';
     html += "<td>" + statusPill(status) + "</td>";
-    html += '<td class="col-project"><div class="proj-name">' + esc(r.projectName) + '</div><div class="proj-sub">' + esc(r.clientName || "\u2014") + "</div></td>";
+    html += '<td class="wrap-cell"><div class="proj-name">' + esc(r.projectName) + '</div><div class="proj-sub">' + esc(r.clientName || "\u2014") + "</div></td>";
     html += "<td>" + esc(r.projectManager || "\u2014") + "</td>";
-    html += '<td class="num mono">' + fmtMult(r.ptdEffMultiplier) + "</td>";
-    html += '<td class="num mono">' + fmtMult(r.goalMultiplier) + "</td>";
-    html += '<td class="num mono">' + fmtMult(r.multiplierVariance) + "</td>";
-    html += '<td class="num mono ' + trendCls + '">' + esc(r.trendText || "") + "</td>";
-    html += '<td class="num mono">' + fmtMoney(r.wip) + "</td>";
-    html += '<td class="num mono">' + fmtMoney(r.arBalance) + "</td>";
-    html += '<td class="num mono">' + fmtMoney(r.laborRemaining) + "</td>";
-    html += '<td class="num mono">' + fmtMoney(r.expenseRemaining) + "</td>";
-    html += '<td class="num mono"><b>' + fmtMoney(r.accessibleRemaining) + "</b></td>";
-    html += '<td class="num mono">' + fmtMoney(r.revenue) + "</td>";
+    html += "<td>" + esc(r.projectStatus || "\u2014") + "</td>";
+    html += '<td class="num">' + fmtMult(r.ptdEffMultiplier) + "</td>";
+    html += '<td class="num">' + fmtMult(r.goalMultiplier) + "</td>";
+    html += '<td class="num">' + fmtMult(r.multiplierVariance) + "</td>";
+    html += '<td class="num ' + trendCls + '">' + esc(r.trendText || "") + "</td>";
+    html += '<td class="num">' + fmtMoney(r.wip) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.arBalance) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.laborRemaining) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.expenseRemaining) + "</td>";
+    html += '<td class="num"><b>' + fmtMoney(r.accessibleRemaining) + "</b></td>";
+    html += '<td class="num">' + fmtMoney(r.feeContract) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.revenue) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.invoiced) + "</td>";
+    html += '<td class="num">' + fmtMoney(r.subFee) + "</td>";
+    html += "<td>" + fmtDate(r.lastInvoicedDate) + "</td>";
     html += '<td><span class="chev">&#9656;</span></td>';
     html += "</tr>";
-    html += '<tr class="detail-row' + (isOpen ? " open" : "") + '" id="detail_' + rowId + '"><td colspan="' + COLUMNS.length + '">' + (isOpen ? renderDetail(r) : "") + "</td></tr>";
+    html += '<tr class="detail-row' + (isOpen ? "" : " closed") + '"><td colspan="' + COLUMNS.length + '">' + (isOpen ? renderDetail(r) : "") + "</td></tr>";
   });
   body.innerHTML = html;
 
@@ -987,114 +842,208 @@ function renderTableBody() {
       renderTableBody();
     });
   });
+
+  records.forEach(function (r) {
+    if (state.expanded[r.projectId]) initJobCharts(r);
+  });
 }
 
 function renderDetail(r) {
   var lineRows = r.lineItems.map(function (li) {
     return "<tr><td>" + esc(li.name) + '</td><td><span class="bucket-tag bucket-' + li.bucket + '">' + li.bucket + "</span></td>" +
-      '<td class="num mono">' + fmtMoney2(li.fee) + '</td><td class="num mono">' + fmtMoney2(li.costToDate) + '</td><td class="num mono">' + fmtMoney2(li.fee - li.costToDate) + "</td></tr>";
+      '<td class="num">' + fmtMoney2(li.fee) + '</td><td class="num">' + fmtMoney2(li.costToDate) + '</td><td class="num">' + fmtMoney2(li.fee - li.costToDate) + "</td></tr>";
   }).join("");
+  var pid = "chartsafe_" + r.projectId.replace(/\W/g, "_");
   return '<div class="detail-wrap">' +
     '<div class="detail-grid">' +
-      field("Client", r.clientName) +
-      field("Fee / Contract", fmtMoney2(r.feeContract)) +
-      field("Invoiced", fmtMoney2(r.invoiced)) +
-      field("Last Invoice", fmtDate(r.lastInvoicedDate)) +
-      field("Labor Cost (JTD)", fmtMoney2(r.laborCost)) +
-      field("Expense (Subs&ODC)", fmtMoney2(r.expense)) +
-      field("Bill Multiplier", fmtMult(r.billMultiplier)) +
-      field("Sub Fee (not accessible)", fmtMoney2(r.subFee)) +
-      field("Status", r.projectStatus || "\u2014") +
-      field("Start", fmtDate(r.actualStart)) +
-      field("Est. Completion", fmtDate(r.estCompletion)) +
-      field("Project ID", r.projectId) +
+      field("Client", r.clientName) + field("Fee / Contract", fmtMoney2(r.feeContract)) +
+      field("Invoiced", fmtMoney2(r.invoiced)) + field("Last Invoice", fmtDate(r.lastInvoicedDate)) +
+      field("Labor Cost (JTD)", fmtMoney2(r.laborCost)) + field("Expense (Subs&ODC)", fmtMoney2(r.expense)) +
+      field("Bill Multiplier", fmtMult(r.billMultiplier)) + field("Sub Fee (not accessible)", fmtMoney2(r.subFee)) +
+      field("Status", r.projectStatus || "\u2014") + field("Start", fmtDate(r.actualStart)) +
+      field("Est. Completion", fmtDate(r.estCompletion)) + field("Project ID", r.projectId) +
     "</div>" +
     (r.projectNote ? '<div class="detail-note">' + esc(r.projectNote) + "</div>" : "") +
-    '<p class="lineitem-title">Task-line budget breakdown</p>' +
+    '<p class="section-title">Task-line budget breakdown</p>' +
     '<table class="lineitems"><thead><tr><th>Line</th><th>Bucket</th><th class="num">Fee</th><th class="num">Cost to date</th><th class="num">Remaining</th></tr></thead><tbody>' +
     (lineRows || '<tr><td colspan="5" style="color:var(--ink-faint)">No task lines found under this project.</td></tr>') +
     "</tbody></table>" +
+    '<p class="section-title" style="margin-top:16px;">Trend across snapshots</p>' +
+    '<div class="job-charts">' +
+      '<div class="job-chart-card"><canvas id="chart_var_' + pid + '"></canvas></div>' +
+      '<div class="job-chart-card"><canvas id="chart_wip_' + pid + '"></canvas></div>' +
+    "</div>" +
     "</div>";
-  function field(k, v) {
-    return '<div class="detail-field"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>";
-  }
+  function field(k, v) { return '<div class="detail-field"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 }
 
-/* ---------- Opportunity Map ---------- */
+function initJobCharts(r) {
+  var pid = "chartsafe_" + r.projectId.replace(/\W/g, "_");
+  var entries = (state.history[r.projectId] || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+  buildJobChart("chart_var_" + pid, entries, "multiplierVariance", "Multiplier Variance", STATUS_HEX.green);
+  buildJobChart("chart_wip_" + pid, entries, "wip", "WIP ($)", "#2C6E8E");
+}
+
+function buildJobChart(canvasId, entries, field, label, color) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var wrap = canvas.parentElement;
+  if (entries.length < 2) {
+    wrap.innerHTML = '<div class="chart-empty">' + esc(label) + ': appears after this job has been loaded in 2+ weekly snapshots.<br>Currently have ' + entries.length + ".</div>";
+    return;
+  }
+  var labels = entries.map(function (e) { return e.date; });
+  var data = entries.map(function (e) { return e[field]; });
+  var chart = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: { labels: labels, datasets: [{ label: label, data: data, borderColor: color, backgroundColor: color, tension: 0.15, pointRadius: 3 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, title: { display: true, text: label, font: { size: 11 } } },
+      scales: { y: { grid: { color: "#E4E9ED" } }, x: { grid: { display: false } } },
+    },
+  });
+  state.detailCharts[canvasId] = chart;
+}
+
+/* =========================================================
+   RENDER: Opportunity Map
+   ========================================================= */
+
+// Accessible Remaining is heavily right-skewed (a handful of large jobs,
+// a long tail of small ones), so plotting it on a plain linear axis
+// crushes almost every point into a line near zero. This symmetric-log
+// transform spreads the small/medium values out while still placing the
+// big outliers sensibly, and it round-trips exactly through zero.
+function symlog(y) { var s = y < 0 ? -1 : 1; return s * Math.log10(1 + Math.abs(y)); }
+function symlogInverse(t) { var s = t < 0 ? -1 : 1; return s * (Math.pow(10, Math.abs(t)) - 1); }
+var Y_TICK_DOLLARS = [-1000000, -100000, -10000, -1000, 0, 1000, 10000, 100000, 1000000, 4000000, 10000000];
 
 function renderMap() {
   var canvas = document.getElementById("mapCanvas");
   var points = state.records.filter(function (r) { return r.multiplierVariance !== null && r.accessibleRemaining !== null; });
-  var data = points.map(function (r) { return { x: r.multiplierVariance, y: r.accessibleRemaining }; });
-  var colors = points.map(function (r) { return STATUS_HEX[combinedStatus(r)]; });
+  var data = points.map(function (r) { return { x: r.multiplierVariance, y: symlog(r.accessibleRemaining) }; });
+  var colors = points.map(function (r) { return STATUS_HEX[r._status || combinedStatus(r)]; });
 
-  if (state.mapChart) { state.mapChart.destroy(); }
+  if (state.mapChart) state.mapChart.destroy();
   if (!points.length) return;
 
-  var gridColor = "#DBE3EA";
-  var zeroColor = "#BD8A2E";
+  var gridColor = "#DDE3E8", zeroColor = "#B9832C";
+  var yMin = symlog(Math.min(0, points.reduce(function (m, r) { return Math.min(m, r.accessibleRemaining); }, 0)) - 1);
+  var yMax = symlog(points.reduce(function (m, r) { return Math.max(m, r.accessibleRemaining); }, 0) * 1.15);
 
   state.mapChart = new Chart(canvas.getContext("2d"), {
     type: "scatter",
     data: { datasets: [{ label: "Projects", data: data, backgroundColor: colors, borderColor: "rgba(0,0,0,0.15)", borderWidth: 1, pointRadius: 6, pointHoverRadius: 8 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       scales: {
-        x: {
-          title: { display: true, text: "Multiplier Variance (actual \u2212 goal)", font: { family: "IBM Plex Mono", size: 11 } },
-          grid: { color: function (ctx) { return ctx.tick.value === 0 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 1; } },
-          ticks: { font: { family: "IBM Plex Mono", size: 10 } },
-        },
-        y: {
-          title: { display: true, text: "Accessible Budget Remaining ($)", font: { family: "IBM Plex Mono", size: 11 } },
-          grid: { color: function (ctx) { return ctx.tick.value === 0 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 1; } },
-          ticks: { font: { family: "IBM Plex Mono", size: 10 }, callback: function (v) { return fmtMoney(v); } },
-        },
+        x: { title: { display: true, text: "Multiplier Variance (actual \u2212 goal)", font: { size: 11 } },
+             grid: { color: function (ctx) { return ctx.tick.value === 0 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 1; } } },
+        y: { title: { display: true, text: "Accessible Budget Remaining ($, compressed scale)", font: { size: 11 } },
+             min: yMin, max: yMax,
+             afterBuildTicks: function (axis) {
+               axis.ticks = Y_TICK_DOLLARS.filter(function (d) { return symlog(d) >= axis.min && symlog(d) <= axis.max; }).map(function (d) { return { value: symlog(d) }; });
+             },
+             grid: { color: function (ctx) { return Math.abs(ctx.tick.value) < 0.001 ? zeroColor : gridColor; }, lineWidth: function (ctx) { return Math.abs(ctx.tick.value) < 0.001 ? 2 : 1; } },
+             ticks: { callback: function (v) { return fmtMoney(symlogInverse(v)); } } },
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function (ctx) {
-              var r = points[ctx.dataIndex];
-              return [r.projectName, "Variance: " + fmtMult(r.multiplierVariance), "Accessible: " + fmtMoney(r.accessibleRemaining)];
-            },
-          },
-        },
+        tooltip: { callbacks: { label: function (ctx) {
+          var r = points[ctx.dataIndex];
+          return [r.projectName, "Variance: " + fmtMult(r.multiplierVariance), "Accessible: " + fmtMoney(r.accessibleRemaining)];
+        } } },
       },
     },
   });
 }
 
-/* ---------- Trend view ---------- */
+function renderTopBudgetChart() {
+  var canvas = document.getElementById("topBudgetCanvas");
+  var top = state.records
+    .filter(function (r) { return r.accessibleRemaining !== null; })
+    .slice()
+    .sort(function (a, b) { return b.accessibleRemaining - a.accessibleRemaining; })
+    .slice(0, 14);
+
+  if (state.topBudgetChart) state.topBudgetChart.destroy();
+  if (!top.length) return;
+
+  state.topBudgetChart = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: top.map(function (r) { return r.projectName.length > 42 ? r.projectName.slice(0, 40) + "\u2026" : r.projectName; }),
+      datasets: [{ data: top.map(function (r) { return r.accessibleRemaining; }), backgroundColor: top.map(function (r) { return STATUS_HEX[r._status || combinedStatus(r)]; }) }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { callback: function (v) { return fmtMoney(v); } }, grid: { color: "#DDE3E8" } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function (ctx) { return fmtMoney(ctx.parsed.x); } } },
+      },
+    },
+  });
+}
+
+/* =========================================================
+   RENDER: Trend view
+   ========================================================= */
 
 function renderTrend() {
   var portfolioHistory = loadPortfolioHistory();
   var el = document.getElementById("trendContent");
+  if (state.trendChart) { state.trendChart.destroy(); state.trendChart = null; }
+
   if (portfolioHistory.length < 2) {
-    el.innerHTML = '<div class="trend-empty">Load an export each week and this view will fill in with your portfolio\u2019s trend over time. Right now there' + (portfolioHistory.length === 1 ? "\u2019s only one snapshot recorded." : "\u2019s no history yet.") + "</div>";
+    el.innerHTML = '<div class="trend-empty">Load an export each week and this view fills in with your portfolio\u2019s trend over time. Right now there' +
+      (portfolioHistory.length === 1 ? "\u2019s only one snapshot recorded." : "\u2019s no history yet.") + "</div>";
     return;
   }
-  var rows = portfolioHistory.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (h) {
-    return "<tr><td>" + esc(h.date) + '</td><td class="num">' + h.total + '</td><td class="num" style="color:var(--good)">' + h.green +
-      '</td><td class="num" style="color:var(--watch)">' + h.yellow + '</td><td class="num" style="color:var(--bad)">' + h.red +
-      '</td><td class="num">' + fmtMoney(h.totalRevenue) + '</td><td class="num">' + fmtMoney(h.totalWip) + '</td><td class="num">' + fmtMoney(h.totalAccessible) + "</td></tr>";
-  }).join("");
-  el.innerHTML = '<table class="snapshots"><thead><tr><th>Snapshot</th><th class="num">Projects</th><th class="num">Green</th><th class="num">Yellow</th><th class="num">Red</th><th class="num">Revenue</th><th class="num">WIP</th><th class="num">Accessible</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  var sorted = portfolioHistory.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  el.innerHTML = '<div class="trend-chart-wrap"><canvas id="trendCanvas"></canvas></div><table class="snapshots"><thead><tr><th>Snapshot</th><th class="num">Projects</th><th class="num">Green</th><th class="num">Yellow</th><th class="num">Red</th><th class="num">Pending</th><th class="num">Revenue</th><th class="num">Accessible</th></tr></thead><tbody>' +
+    sorted.slice().reverse().map(function (h) {
+      return "<tr><td>" + esc(h.date) + '</td><td class="num">' + h.total + '</td><td class="num" style="color:var(--good)">' + h.green +
+        '</td><td class="num" style="color:var(--watch)">' + h.yellow + '</td><td class="num" style="color:var(--bad)">' + h.red +
+        '</td><td class="num" style="color:var(--pending)">' + (h.pending || 0) + '</td><td class="num">' + fmtMoney(h.totalRevenue) + '</td><td class="num">' + fmtMoney(h.totalAccessible) + "</td></tr>";
+    }).join("") + "</tbody></table>";
+
+  var ctx = document.getElementById("trendCanvas").getContext("2d");
+  state.trendChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: sorted.map(function (h) { return h.date; }),
+      datasets: [
+        { label: "Green", data: sorted.map(function (h) { return h.green; }), borderColor: STATUS_HEX.green, backgroundColor: STATUS_HEX.green, tension: 0.15 },
+        { label: "Yellow", data: sorted.map(function (h) { return h.yellow; }), borderColor: STATUS_HEX.yellow, backgroundColor: STATUS_HEX.yellow, tension: 0.15 },
+        { label: "Red", data: sorted.map(function (h) { return h.red; }), borderColor: STATUS_HEX.red, backgroundColor: STATUS_HEX.red, tension: 0.15 },
+        { label: "Pending", data: sorted.map(function (h) { return h.pending || 0; }), borderColor: STATUS_HEX.pending, backgroundColor: STATUS_HEX.pending, tension: 0.15, borderDash: [4, 3] },
+      ],
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: "#E4E9ED" } }, x: { grid: { display: false } } } },
+  });
 }
 
-/* ---------- view switching ---------- */
+/* =========================================================
+   VIEW SWITCHING
+   ========================================================= */
 
 function setView(view) {
   state.view = view;
   document.getElementById("tableView").style.display = view === "table" ? "block" : "none";
   document.getElementById("mapView").style.display = view === "map" ? "block" : "none";
+  document.getElementById("topBudgetPanel").style.display = view === "map" ? "block" : "none";
   document.getElementById("trendView").style.display = view === "trend" ? "block" : "none";
   Array.prototype.forEach.call(document.querySelectorAll("#viewSwitcher button"), function (b) {
     b.classList.toggle("active", b.getAttribute("data-view") === view);
   });
-  if (view === "map") renderMap();
+  if (view === "map") { renderMap(); renderTopBudgetChart(); }
   if (view === "trend") renderTrend();
 }
 
@@ -1104,25 +1053,18 @@ function setView(view) {
 
 function handleWorkbook(arrayBuffer, fileName) {
   var wb;
-  try {
-    wb = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
-  } catch (e) {
-    alert("Could not read that file. Make sure it's the Power BI Executive Summary .xlsx export, unmodified.\n\n" + e.message);
-    return;
-  }
+  try { wb = XLSX.read(arrayBuffer, { type: "array", cellDates: true }); }
+  catch (e) { alert("Could not read that file. Make sure it's the Power BI Executive Summary .xlsx export, unmodified.\n\n" + e.message); return; }
   var ws = wb.Sheets[wb.SheetNames[0]];
   var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
   var parsed = parseExport(rows);
-
-  if (!parsed.records.length) {
-    alert("No project blocks were found in that file. Double-check it's the Executive Summary export.");
-    return;
-  }
+  if (!parsed.records.length) { alert("No project blocks were found in that file. Double-check it's the Executive Summary export."); return; }
 
   var snapshotDate = new Date().toISOString().slice(0, 10);
   updateHistory(state.history, parsed.records, snapshotDate);
   saveHistory(state.history);
   applyTrends(state.history, parsed.records, snapshotDate);
+  refreshComputedFields(parsed.records);
 
   state.records = parsed.records;
   state.skippedBlocks = parsed.skippedBlocks;
@@ -1130,19 +1072,12 @@ function handleWorkbook(arrayBuffer, fileName) {
   state.fileName = fileName;
   state.expanded = {};
 
-  var dashboardStats = computeDashboard(state.records);
-  var portfolioHistory = loadPortfolioHistory();
-  portfolioHistory = portfolioHistory.filter(function (h) { return h.date !== snapshotDate; });
-  portfolioHistory.push({
-    date: snapshotDate, total: dashboardStats.total, red: dashboardStats.red, yellow: dashboardStats.yellow,
-    green: dashboardStats.green, totalRevenue: dashboardStats.totalRevenue, totalWip: dashboardStats.totalWip,
-    totalAccessible: dashboardStats.totalAccessible,
-  });
+  var d = computeDashboard(state.records);
+  var portfolioHistory = loadPortfolioHistory().filter(function (h) { return h.date !== snapshotDate; });
+  portfolioHistory.push({ date: snapshotDate, total: d.total, red: d.red, yellow: d.yellow, green: d.green, pending: d.pending, totalRevenue: d.totalRevenue, totalWip: d.totalWip, totalAccessible: d.totalAccessible });
   savePortfolioHistory(portfolioHistory);
 
-  try {
-    localStorage.setItem(LAST_DATASET_KEY, JSON.stringify({ records: state.records, skippedBlocks: state.skippedBlocks, snapshotDate: snapshotDate, fileName: fileName }));
-  } catch (e) {}
+  try { localStorage.setItem(LAST_DATASET_KEY, JSON.stringify({ records: state.records, skippedBlocks: state.skippedBlocks, snapshotDate: snapshotDate, fileName: fileName })); } catch (e) {}
 
   renderAll();
 }
@@ -1155,46 +1090,48 @@ function renderAll() {
   document.getElementById("footerRow").style.display = "flex";
 
   var meta = state.skippedBlocks.length
-    ? state.records.length + " projects &middot; snapshot " + state.snapshotDate + " &middot; " + state.skippedBlocks.length + " skipped (no Project Note row) &mdash; see below"
+    ? state.records.length + " projects &middot; snapshot " + state.snapshotDate + " &middot; " + state.skippedBlocks.length + " skipped (no Project Note row)"
     : state.records.length + " projects &middot; snapshot " + state.snapshotDate;
-  document.getElementById("fileMeta").innerHTML = esc(state.fileName || "") + "<br>" + meta;
+  document.getElementById("fileMeta").innerHTML = esc(state.fileName || "") + " &middot; " + meta;
 
+  renderColGroup();
   renderDashboard();
   renderTableHead();
   renderTableBody();
-  if (state.view === "map") renderMap();
+  document.getElementById("topBudgetPanel").style.display = state.view === "map" ? "block" : "none";
+  if (state.view === "map") { renderMap(); renderTopBudgetChart(); }
   if (state.view === "trend") renderTrend();
-
-  if (state.skippedBlocks.length) {
-    var note = document.getElementById("skippedNote");
-    var msg = "Skipped (no Project Note row found): " + state.skippedBlocks.map(function (s) { return s.projectId + " " + s.projectName; }).join("; ");
-    if (!note) {
-      note = document.createElement("div");
-      note.id = "skippedNote";
-      note.style.cssText = "max-width:1400px;margin:8px auto 0;padding:10px 22px;color:var(--bad);font-size:12.5px;";
-      document.getElementById("mainArea").after(note);
-    }
-    note.textContent = msg;
-  } else {
-    var existing = document.getElementById("skippedNote");
-    if (existing) existing.remove();
-  }
 }
 
 /* =========================================================
    WIRING
    ========================================================= */
 
+var GLOSSARY = [
+  ["Net Revenue", "Internal working definition: Labor Cost x 3. This aligns with the target effective multiplier of at least 3.0.", "If labor cost is 10,000, net revenue is 30,000."],
+  ["Revenue", "Net Revenue + Expenses.", "If net revenue is 30,000 and expenses are 5,000, revenue is 35,000."],
+  ["Expenses", "Direct project costs such as gas, lodging, meals, Amazon purchases, and unit usage costs for boats, trucks, sonar, and lidar packages.", "A job has 2,000 in travel and 3,000 in unit usage, so total expenses are 5,000."],
+  ["FFP", "Firm Fixed Price; a project where the invoiced amount is the agreed contract amount.", "A project is contracted for 150,000, so that is the amount charged to the client."],
+  ["Fee JTD", "Job-to-date fee or income recognized so far on the project, often used on fixed-price work.", "A 150,000 fixed-fee project that is 50% complete may show about 75,000 Fee JTD."],
+  ["WIP", "Work in Progress; used to track work performed, billing position, or budget remaining on a job, depending on company setup.", "If the system shows negative 20,000 and your company interprets that as budget left, then 20,000 remains."],
+  ["Budgeted Goal", "The target amount planned in the budget for a period or for the full job.", "A project has a budgeted net revenue goal of 120,000."],
+  ["Goal VAR PTD", "Goal variance period-to-date; the difference between actual results and the budgeted goal for the current period-to-date.", "If the monthly goal is 50,000 and actual is 60,000, the Goal VAR PTD is +10,000."],
+  ["PTD Eff Multiplier", "Period-to-date effective multiplier, typically revenue divided by labor cost for the selected period. The internal target is at least 3.0.", "If period revenue is 70,000 and labor cost is 20,000, the PTD Eff Multiplier is 3.5."],
+  ["Bill Goal", "The planned amount to bill in the selected period based on forecast or budget.", "If the billing target for April is 100,000 and only 80,000 has been billed, the project is 20,000 behind bill goal."],
+  ["Subs and ODCs", "Subcontractor costs plus other direct costs such as travel, materials, and similar direct project charges.", "A dive subcontractor costs 25,000 and travel costs are 5,000, so Subs and ODCs total 30,000."],
+  ["Budget Variance", "The difference between actual and budgeted values for a metric such as labor, fee, or revenue.", "If budgeted labor is 40,000 and actual labor is 50,000, the labor budget variance is 10,000 over budget."],
+  ["Budget Dollar Variance", "Budget variance expressed explicitly in dollars rather than percent.", "If actual net revenue is 100,000 and budget is 120,000, budget dollar variance is -20,000."],
+];
+
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("glossaryBody").innerHTML = GLOSSARY.map(function (row) {
+    return "<tr><td class=\"term\">" + esc(row[0]) + "</td><td>" + esc(row[1]) + '</td><td class="example">' + esc(row[2]) + "</td></tr>";
+  }).join("");
+
   var fileInput = document.getElementById("fileInput");
-  var loadBtn = document.getElementById("loadBtn");
-  var dropzoneBtn = document.getElementById("dropzoneBtn");
-  var dropzoneCard = document.getElementById("dropzoneCard");
-
   function openPicker() { fileInput.click(); }
-  loadBtn.addEventListener("click", openPicker);
-  dropzoneBtn.addEventListener("click", openPicker);
-
+  document.getElementById("loadBtn").addEventListener("click", openPicker);
+  document.getElementById("dropzoneBtn").addEventListener("click", openPicker);
   fileInput.addEventListener("change", function () {
     var file = fileInput.files[0];
     if (!file) return;
@@ -1203,12 +1140,9 @@ document.addEventListener("DOMContentLoaded", function () {
     reader.readAsArrayBuffer(file);
   });
 
-  ["dragenter", "dragover"].forEach(function (evt) {
-    dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.add("drag-over"); });
-  });
-  ["dragleave", "drop"].forEach(function (evt) {
-    dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.remove("drag-over"); });
-  });
+  var dropzoneCard = document.getElementById("dropzoneCard");
+  ["dragenter", "dragover"].forEach(function (evt) { dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.add("drag-over"); }); });
+  ["dragleave", "drop"].forEach(function (evt) { dropzoneCard.addEventListener(evt, function (e) { e.preventDefault(); dropzoneCard.classList.remove("drag-over"); }); });
   dropzoneCard.addEventListener("drop", function (e) {
     var file = e.dataTransfer.files && e.dataTransfer.files[0];
     if (!file) return;
@@ -1220,11 +1154,7 @@ document.addEventListener("DOMContentLoaded", function () {
   Array.prototype.forEach.call(document.querySelectorAll("#viewSwitcher button"), function (b) {
     b.addEventListener("click", function () { setView(b.getAttribute("data-view")); });
   });
-
-  document.getElementById("searchInput").addEventListener("input", function (e) {
-    state.search = e.target.value;
-    renderTableBody();
-  });
+  document.getElementById("searchInput").addEventListener("input", function (e) { state.search = e.target.value; renderTableBody(); });
 
   document.getElementById("exportHistoryBtn").addEventListener("click", function () {
     var payload = { history: state.history, portfolioHistory: loadPortfolioHistory(), exportedAt: new Date().toISOString() };
@@ -1234,7 +1164,6 @@ document.addEventListener("DOMContentLoaded", function () {
     a.download = "exec-summary-history-" + new Date().toISOString().slice(0, 10) + ".json";
     a.click();
   });
-
   var importInput = document.getElementById("importHistoryInput");
   document.getElementById("importHistoryBtn").addEventListener("click", function () { importInput.click(); });
   importInput.addEventListener("change", function () {
@@ -1245,25 +1174,30 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         var payload = JSON.parse(e.target.result);
         if (payload.history) { state.history = payload.history; saveHistory(state.history); }
-        if (payload.portfolioHistory) { savePortfolioHistory(payload.portfolioHistory); }
+        if (payload.portfolioHistory) savePortfolioHistory(payload.portfolioHistory);
         alert("History imported.");
         if (state.view === "trend") renderTrend();
-      } catch (err) {
-        alert("Couldn't read that history file: " + err.message);
-      }
+      } catch (err) { alert("Couldn't read that history file: " + err.message); }
     };
     reader.readAsText(file);
   });
 
   document.getElementById("clearDataBtn").addEventListener("click", function () {
     if (!confirm("This clears all trend history and the cached dataset stored in this browser. This cannot be undone. Continue?")) return;
-    localStorage.removeItem(HISTORY_KEY);
-    localStorage.removeItem(PORTFOLIO_HISTORY_KEY);
-    localStorage.removeItem(LAST_DATASET_KEY);
+    localStorage.removeItem(HISTORY_KEY); localStorage.removeItem(PORTFOLIO_HISTORY_KEY); localStorage.removeItem(LAST_DATASET_KEY);
     location.reload();
   });
 
-  // Restore last session, if any, so a page refresh doesn't lose your view.
+  function wireModal(btnId, modalId, closeId) {
+    var modal = document.getElementById(modalId);
+    document.getElementById(btnId).addEventListener("click", function () { modal.classList.add("open"); });
+    document.getElementById(closeId).addEventListener("click", function () { modal.classList.remove("open"); });
+    modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("open"); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") modal.classList.remove("open"); });
+  }
+  wireModal("definitionsBtn", "definitionsModal", "closeDefinitions");
+  wireModal("legendBtn", "legendModal", "closeLegend");
+
   try {
     var cached = JSON.parse(localStorage.getItem(LAST_DATASET_KEY) || "null");
     if (cached && cached.records && cached.records.length) {
@@ -1272,6 +1206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       state.snapshotDate = cached.snapshotDate;
       state.fileName = cached.fileName;
       applyTrends(state.history, state.records, state.snapshotDate);
+      refreshComputedFields(state.records);
       renderAll();
     }
   } catch (e) {}
