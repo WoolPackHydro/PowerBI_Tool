@@ -179,6 +179,10 @@
   .detail-note { font-size: 12px; color: var(--ink-soft); margin: 8px 0 14px; padding: 8px 10px; background: var(--bg-panel); border: 1px solid var(--grid); border-radius: var(--radius); }
   .section-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin: 0 0 6px; }
   table.lineitems { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--bg-panel); border: 1px solid var(--grid); }
+  /* table.data's overflow/nowrap rule (for its own columns) otherwise leaks
+     into this nested table via CSS descendant matching, since it lives
+     inside a table.data cell -- undo that here so its values render normally. */
+  table.lineitems th, table.lineitems td { overflow: visible; text-overflow: clip; white-space: normal; }
   table.lineitems th, table.lineitems td { border: 1px solid var(--grid); padding: 5px 9px; }
   table.lineitems th { text-align: left; background: var(--bg-head); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-faint); }
   .bucket-tag { font-size: 9.5px; padding: 1px 6px; border-radius: 999px; font-weight: 700; }
@@ -360,7 +364,7 @@
   <div class="modal-card">
     <div class="modal-head"><h2>How status is calculated</h2><button class="modal-close" id="closeLegend">&times;</button></div>
     <div class="modal-body">
-      <p><b>Status</b> combines two signals and shows the worse of the two: <b>Multiplier Variance</b> (actual PTD multiplier minus goal &mdash; red below -0.30, yellow below 0, green at or above goal) and <b>WIP</b> (red above $1,000 unbilled, green below -$1,000, yellow in between). A job sitting right on its goal multiplier but carrying a large positive WIP will show red, since unbilled revenue is a real risk even when the multiplier looks fine.</p>
+      <p><b>Status</b> starts from <b>Multiplier Variance</b> (actual PTD multiplier minus goal &mdash; red below -0.30, yellow below 0, green at or above goal), then checks <b>WIP</b>: if it's more than $1,000 positive (unbilled), that always pushes the status to red regardless of how good the multiplier looks, since unbilled revenue is a real risk on its own. WIP at or below that threshold doesn't change anything either way &mdash; it's the normal resting state, not a signal. The label names which one is actually responsible: "Under goal" means the multiplier itself is the issue, "WIP risk" means the multiplier is fine but unbilled WIP is the concern, and "Goal & WIP risk" means both.</p>
       <p><b>Pending</b> (dashed gray) means revenue booked so far is under 2% of the project's total Fee &mdash; not enough billed activity yet to judge fairly. This covers the case where a second survey round hasn't been invoiced, hours haven't landed, or a subcontractor hasn't billed you yet. These are held out of the Green/Watch/Under Goal counts rather than defaulted to a color that might not mean anything yet.</p>
       <p><b>Labor / Expense / Accessible Remaining</b> come from the individual task lines under each project. Lines starting with "Sub" are subcontractor budgets &mdash; fixed price, not reallocatable, excluded from "accessible." Lines with "Expense" in the name go to the Expense bucket. Everything else defaults to Labor. Remaining = that bucket's budgeted Fee minus cost booked to date. Click any row to see the exact breakdown.</p>
       <p><b>A/R Balance</b> is shown as its own sortable column rather than folded into status, since what counts as concerning A/R depends on your own collections norms.</p>
@@ -499,9 +503,7 @@ function parseExport(rows) {
 var VARIANCE_RED_BELOW = -0.30;
 var VARIANCE_YELLOW_BELOW = 0.0;
 var WIP_RED_ABOVE = 1000;
-var WIP_GREEN_BELOW = -1000;
 var PENDING_REVENUE_RATIO = 0.02;
-var STATUS_RANK = { red: 3, yellow: 2, green: 1, nodata: 0 };
 var STATUS_SORT_RANK = { red: 0, yellow: 1, pending: 2, green: 3 };
 
 function isPendingData(rec) {
@@ -516,23 +518,36 @@ function multiplierStatus(rec) {
   if (v < VARIANCE_YELLOW_BELOW) return "yellow";
   return "green";
 }
-function wipStatus(rec) {
-  var w = rec.wip;
-  if (w === null) return "nodata";
-  if (w > WIP_RED_ABOVE) return "red";
-  if (w < WIP_GREEN_BELOW) return "green";
-  return "yellow";
+// WIP is a one-directional risk flag, not a parallel 3-tier scale like the
+// multiplier: a small or negative WIP is just the normal resting state and
+// shouldn't change anything, but WIP past the threshold is a real concern
+// that overrides an otherwise-fine multiplier reading (the "on goal but
+// $94K unbilled" case this was built for).
+function isWipRisk(rec) {
+  return rec.wip !== null && rec.wip > WIP_RED_ABOVE;
 }
 function combinedStatus(rec) {
   if (isPendingData(rec)) return "pending";
-  var a = multiplierStatus(rec), b = wipStatus(rec);
-  if (a === "nodata" && b === "nodata") return "pending";
-  if (a === "nodata") return b;
-  if (b === "nodata") return a;
-  return STATUS_RANK[a] >= STATUS_RANK[b] ? a : b;
+  if (isWipRisk(rec)) return "red";
+  var m = multiplierStatus(rec);
+  return m === "nodata" ? "pending" : m;
 }
 var STATUS_HEX = { red: "#A93A2E", yellow: "#92650B", green: "#1F7A4D", pending: "#566779" };
-var STATUS_LABEL = { red: "Under goal", yellow: "Watch", green: "On goal", pending: "Pending data" };
+
+// The color is the worse of the two signals, but the label says which one
+// is actually responsible -- otherwise a fine multiplier with a WIP problem
+// misleadingly reads as "Under goal."
+function statusLabel(rec) {
+  if (isPendingData(rec)) return "Pending data";
+  var wipRisk = isWipRisk(rec);
+  var m = multiplierStatus(rec);
+  if (m === "nodata" && !wipRisk) return "Pending data";
+  if (wipRisk && (m === "red" || m === "yellow")) return "Goal & WIP risk";
+  if (wipRisk) return "WIP risk";
+  if (m === "red") return "Under goal";
+  if (m === "yellow") return "Watch";
+  return "On goal";
+}
 
 function refreshComputedFields(records) {
   records.forEach(function (r) {
@@ -711,8 +726,9 @@ function renderDashboard() {
     return '<div class="stat-card ' + cls + '"><p class="stat-label">' + esc(label) + '</p><p class="stat-value">' + esc(value) + "</p></div>";
   }
 }
-function statusPill(status) {
-  return '<span class="status-pill status-' + status + '"><span class="dot"></span>' + STATUS_LABEL[status] + "</span>";
+function statusPill(rec) {
+  var status = rec._status || combinedStatus(rec);
+  return '<span class="status-pill status-' + status + '"><span class="dot"></span>' + esc(statusLabel(rec)) + "</span>";
 }
 
 /* =========================================================
@@ -811,7 +827,7 @@ function renderTableBody() {
     var trendCls = r.trendDelta === null ? "trend-new" : (r.trendDelta > 0 ? "trend-up" : (r.trendDelta < 0 ? "trend-down" : "trend-flat"));
     var isOpen = !!state.expanded[r.projectId];
     html += '<tr class="data-row' + (isOpen ? " expanded" : "") + '" data-pid="' + esc(r.projectId) + '">';
-    html += "<td>" + statusPill(status) + "</td>";
+    html += "<td>" + statusPill(r) + "</td>";
     html += '<td class="wrap-cell"><div class="proj-name">' + esc(r.projectName) + '</div><div class="proj-sub">' + esc(r.clientName || "\u2014") + "</div></td>";
     html += "<td>" + esc(r.projectManager || "\u2014") + "</td>";
     html += "<td>" + esc(r.projectStatus || "\u2014") + "</td>";
